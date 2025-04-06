@@ -1,4 +1,0 @@
-id,created_at,email,name,role
-55555555-5555-5555-5555-555555555555,2024-06-10T09:00:00Z,admin@example.com,Admin User,admin
-66666666-6666-6666-6666-666666666666,2024-06-11T11:15:00Z,editor@example.com,Content Editor,editor
-77777777-7777-7777-7777-777777777777,2024-06-12T14:20:00Z,user@example.com,Regular User,user 

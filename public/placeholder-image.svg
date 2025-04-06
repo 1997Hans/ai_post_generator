@@ -1,0 +1,44 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a2a3a" />
+      <stop offset="100%" stop-color="#1a1a28" />
+    </linearGradient>
+    <linearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1f1f2e" />
+      <stop offset="100%" stop-color="#151520" />
+    </linearGradient>
+    <!-- Subtle glow effect -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Main background -->
+  <rect width="100%" height="100%" fill="url(#bgGradient)" />
+  
+  <!-- Card background with rounded corners -->
+  <rect x="50" y="50" width="700" height="500" rx="12" fill="url(#cardGradient)" stroke="#3a3a4a" stroke-width="1" />
+  
+  <!-- Decorative elements -->
+  <circle cx="150" cy="150" r="70" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-opacity="0.2" />
+  <circle cx="650" cy="450" r="90" fill="none" stroke="#ec4899" stroke-width="2" stroke-opacity="0.2" />
+  
+  <!-- Abstract image icon -->
+  <g transform="translate(400, 230)" filter="url(#glow)">
+    <rect x="-70" y="-50" width="140" height="100" rx="8" fill="none" stroke="#8b5cf6" stroke-width="2" />
+    <line x1="-40" y1="20" x2="40" y2="20" stroke="#8b5cf6" stroke-width="2" />
+    <circle cx="-25" cy="-15" r="15" fill="none" stroke="#ec4899" stroke-width="2" />
+    <polygon points="20,-30 50,-15 20,0" fill="none" stroke="#3b82f6" stroke-width="2" />
+  </g>
+  
+  <!-- Text -->
+  <text x="400" y="350" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#ffffff" filter="url(#glow)">
+    Image Not Available
+  </text>
+  <text x="400" y="390" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#a1a1aa">
+    Content will appear here when available
+  </text>
+</svg> 
