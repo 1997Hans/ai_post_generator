@@ -123,7 +123,7 @@ Create a `.env.local` file in your project root with the following variables:
 # Choose either Gemini OR OpenAI for text generation
 
 # Google Gemini API (recommended, free tier available)
-GEMINI_API_KEY=AIzaSyDWbIizsGJ-c3xI_yjF4oFSDVJ5LpOvVNg
+GEMINI_API_KEY=your_gemini_api_key_here
 # Get your key at: https://ai.google.dev/
 
 # OR OpenAI API (requires payment after free credits)
