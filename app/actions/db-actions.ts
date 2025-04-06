@@ -4,6 +4,9 @@ import { revalidatePath } from 'next/cache'
 import { supabase } from '@/lib/supabase'
 import { SavePostValues } from '@/lib/validations/post'
 import { v4 as uuidv4 } from 'uuid'
+import { unstable_cache } from 'next/cache'
+import { db } from '@/lib/db'
+import { Post } from '@/lib/types'
 
 export async function savePost(data: SavePostValues) {
   try {
@@ -37,24 +40,49 @@ export async function savePost(data: SavePostValues) {
   }
 }
 
-export async function getPosts(limit = 10) {
+// Cache the posts fetch to avoid unnecessary database hits
+export const getAllPosts = unstable_cache(
+  async (): Promise<Post[]> => {
+    try {
+      // Use supabase for now to match existing implementation
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw new Error(error.message)
+      
+      return data || []
+    } catch (error) {
+      console.error("Database error:", error);
+      return [];
+    }
+  },
+  ['posts-list'],
+  { tags: ['posts'], revalidate: 60 } // Cache for 60 seconds
+);
+
+// Function to get posts with optional search query
+export async function getPosts(query?: string): Promise<Post[]> {
   try {
+    if (!query) {
+      return getAllPosts();
+    }
+    
+    // If we have a search query, we need to filter the posts
+    // Use supabase to match existing implementation
     const { data, error } = await supabase
       .from('posts')
       .select('*')
+      .or(`content.ilike.%${query}%,prompt.ilike.%${query}%,hashtags.ilike.%${query}%`)
       .order('created_at', { ascending: false })
-      .limit(limit)
     
     if (error) throw new Error(error.message)
     
-    return { posts: data, success: true }
+    return data || []
   } catch (error) {
-    console.error('Error getting posts:', error)
-    return { 
-      success: false, 
-      posts: [],
-      error: error instanceof Error ? error.message : 'Unknown error occurred' 
-    }
+    console.error("Database error:", error);
+    return [];
   }
 }
 
@@ -81,16 +109,26 @@ export async function getPost(postId: string) {
 
 export async function approvePost(postId: string) {
   try {
+    // Get current state to toggle
+    const { data: post, error: getError } = await supabase
+      .from('posts')
+      .select('approved')
+      .eq('id', postId)
+      .single()
+    
+    if (getError) throw new Error(getError.message)
+    
+    // Toggle approved state
     const { error } = await supabase
       .from('posts')
-      .update({ approved: true })
+      .update({ approved: !post?.approved })
       .eq('id', postId)
     
     if (error) throw new Error(error.message)
     
     revalidatePath('/')
     revalidatePath('/dashboard')
-    revalidatePath(`/post/${postId}`)
+    revalidatePath(`/dashboard/${postId}`)
     
     return { success: true }
   } catch (error) {
@@ -117,13 +155,16 @@ export async function rejectPost(postId: string, feedbackText: string) {
     
     if (feedbackError) throw new Error(feedbackError.message)
     
-    // Delete the post
-    const { error: deleteError } = await supabase
+    // Update the post to mark as not approved
+    const { error: updateError } = await supabase
       .from('posts')
-      .delete()
+      .update({ 
+        approved: false,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', postId)
     
-    if (deleteError) throw new Error(deleteError.message)
+    if (updateError) throw new Error(updateError.message)
     
     revalidatePath('/')
     revalidatePath('/dashboard')
@@ -131,6 +172,28 @@ export async function rejectPost(postId: string, feedbackText: string) {
     return { success: true }
   } catch (error) {
     console.error('Error rejecting post:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    }
+  }
+}
+
+export async function deletePost(postId: string) {
+  try {
+    const { error } = await supabase
+      .from('posts')
+      .delete()
+      .eq('id', postId)
+    
+    if (error) throw new Error(error.message)
+    
+    revalidatePath('/')
+    revalidatePath('/dashboard')
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting post:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error occurred' 

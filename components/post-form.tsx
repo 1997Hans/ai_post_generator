@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { SparklesIcon } from "lucide-react"
+import { SparklesIcon, CheckCircle } from "lucide-react"
+import { savePost } from "@/app/actions/db-actions"
+import { useToast } from "@/lib/hooks/useToast"
 
 export function PostForm() {
   const [activeTab, setActiveTab] = useState("create")
@@ -11,6 +13,11 @@ export function PostForm() {
   const [visualStyle, setVisualStyle] = useState("realistic")
   const [errorMsg, setErrorMsg] = useState("")
   const [result, setResult] = useState<any>(null)
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle")
+  const [savedPostId, setSavedPostId] = useState<string | null>(null)
+  
+  // Use toast for notifications
+  const { showSuccess, showError } = useToast()
 
   // Use the direct fetch approach first to debug
   const [isLoading, setIsLoading] = useState(false)
@@ -20,11 +27,46 @@ export function PostForm() {
     navigator.clipboard.writeText(text)
       .then(() => {
         console.log('Copied to clipboard');
-        // You could add a toast notification here
+        showSuccess("Copied to clipboard");
       })
       .catch(err => {
         console.error('Failed to copy: ', err);
       });
+  };
+
+  // Handle saving post to database
+  const handleSavePost = async () => {
+    if (!result) return;
+    
+    try {
+      setSaveStatus("saving");
+      
+      const postData = {
+        content: result.mainContent,
+        imageUrl: result.imageUrl || '',
+        hashtags: result.hashtags || [],
+        prompt: prompt,
+        refinedPrompt: result.visualPrompt || null,
+        tone: tone,
+        visualStyle: visualStyle
+      };
+      
+      console.log('Saving post to database:', postData);
+      
+      const { success, postId, error } = await savePost(postData);
+      
+      if (success && postId) {
+        setSaveStatus("saved");
+        setSavedPostId(postId);
+        showSuccess("Post saved to database");
+      } else {
+        throw new Error(error || 'Failed to save post');
+      }
+    } catch (error) {
+      console.error('Error saving post:', error);
+      setSaveStatus("idle");
+      showError("Failed to save post", error.message);
+    }
   };
 
   // Handle image download
@@ -136,6 +178,15 @@ export function PostForm() {
     setResult(mockResult);
     setActiveTab("preview");
   }
+
+  // Reset the form to create a new post
+  const handleReset = () => {
+    setPrompt("");
+    setResult(null);
+    setSaveStatus("idle");
+    setSavedPostId(null);
+    setActiveTab("create");
+  };
 
   const handleFormSubmit = (e) => {
     e.preventDefault()
@@ -605,6 +656,100 @@ export function PostForm() {
                       </span>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Save to Database Button */}
+              <div style={{ 
+                display: "flex", 
+                justifyContent: "center", 
+                marginTop: "32px" 
+              }}>
+                {saveStatus === "saved" ? (
+                  <div style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    gap: "8px",
+                    padding: "12px 24px",
+                    borderRadius: "8px",
+                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                    border: "1px solid rgba(16, 185, 129, 0.2)",
+                    color: "rgb(16, 185, 129)",
+                    fontSize: "16px"
+                  }}>
+                    <CheckCircle size={20} />
+                    <span>Saved to Database</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleSavePost}
+                    disabled={saveStatus === "saving"}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      padding: "12px 24px",
+                      borderRadius: "8px",
+                      backgroundColor: "rgba(143, 75, 222, 0.15)",
+                      border: "1px solid rgba(143, 75, 222, 0.3)",
+                      color: "white",
+                      fontSize: "16px",
+                      fontWeight: "600",
+                      cursor: saveStatus === "saving" ? "not-allowed" : "pointer",
+                      opacity: saveStatus === "saving" ? 0.7 : 1
+                    }}
+                  >
+                    {saveStatus === "saving" ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H14L21 10V19C21 20.1046 20.1046 21 19 21Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M17 21V13H7V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M7 3V7H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        Save to Database
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+              
+              {/* Create new post button (shows only after saving) */}
+              {saveStatus === "saved" && (
+                <div style={{ 
+                  display: "flex", 
+                  justifyContent: "center", 
+                  marginTop: "16px" 
+                }}>
+                  <button
+                    onClick={handleReset}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      padding: "10px 20px",
+                      borderRadius: "8px",
+                      backgroundColor: "rgba(91, 77, 168, 0.1)",
+                      border: "1px solid rgba(91, 77, 168, 0.2)",
+                      color: "#a7a3bc",
+                      fontSize: "14px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 4V20M20 12H4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Create New Post
+                  </button>
                 </div>
               )}
             </div>

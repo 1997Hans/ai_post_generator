@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/react";
 import { StarField } from "@/components/star-field";
 import { PostProvider } from '@/lib/context/PostContext'
+import { Toaster as SonnerToaster } from "sonner";
 
 const spaceGrotesk = Space_Grotesk({ 
   subsets: ["latin"],
@@ -57,6 +58,7 @@ export default function RootLayout({
             <Toaster />
           </PostProvider>
         </ThemeProvider>
+        <SonnerToaster position="top-right" richColors />
         <Analytics />
       </body>
     </html>

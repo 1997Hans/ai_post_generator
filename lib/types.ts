@@ -76,4 +76,47 @@ export interface ErrorResponse {
   message: string;
   code?: string;
   statusCode?: number;
+}
+
+export interface Post {
+  id: string;
+  content: string;
+  image_url?: string | null;
+  hashtags: string;
+  prompt: string;
+  refined_prompt?: string | null;
+  tone?: string | null;
+  visual_style?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+  approved: boolean;
+  feedback?: string | null;
+}
+
+export interface PostResult {
+  content: string;
+  imageUrl?: string;
+  hashtags?: string;
+}
+
+export interface PromptOptions {
+  tone?: string;
+  visualStyle?: string;
+}
+
+export interface PostFormState {
+  prompt: string;
+  tone?: string;
+  visualStyle?: string;
+  result: PostResult | null;
+}
+
+export interface PostInput {
+  content: string;
+  image_url?: string | null;
+  hashtags: string;
+  prompt: string;
+  refined_prompt?: string | null;
+  tone?: string | null;
+  visual_style?: string | null;
 } 

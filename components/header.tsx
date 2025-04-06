@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Pencil } from "lucide-react";
+import { BarChart, Pencil } from "lucide-react";
 
 export function Header() {
   return (
@@ -51,6 +51,25 @@ export function Header() {
             </span>
           </Link>
         </div>
+        
+        <nav>
+          <Link href="/dashboard" style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            color: "white",
+            fontSize: "14px",
+            textDecoration: "none",
+            padding: "8px 12px",
+            borderRadius: "8px",
+            transition: "background-color 0.2s",
+            backgroundColor: "rgba(255, 255, 255, 0.1)",
+            backdropFilter: "blur(10px)"
+          }}>
+            <BarChart size={16} />
+            <span>Dashboard</span>
+          </Link>
+        </nav>
       </div>
     </header>
   );
