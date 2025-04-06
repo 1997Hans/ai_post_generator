@@ -3,7 +3,7 @@
 import { generateImage as hfGenerateImage } from "../../lib/huggingface";
 import { enhanceImagePrompt, getNegativePrompt } from "../../lib/image-prompts";
 import { ImageGenerationResult, ImageRequestInput, VisualStyle, Platform } from "../../lib/types";
-import { handleApiError } from "../../lib/error-handler";
+import { formatError } from "../../lib/error-handler";
 
 /**
  * Server action to generate an image using Hugging Face API
@@ -53,7 +53,8 @@ export async function generateImage({
     };
   } catch (error) {
     // Handle and log the error
-    const errorResponse = handleApiError(error, "Image generation failed");
+    const errorResponse = formatError(error);
+    console.error("Image generation failed:", errorResponse);
     
     return {
       imageUrl: null,
