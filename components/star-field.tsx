@@ -13,8 +13,12 @@ interface Star {
 
 export function StarField() {
   const [stars, setStars] = useState<Star[]>([])
+  const [isMounted, setIsMounted] = useState(false)
   
   useEffect(() => {
+    // Mark component as mounted
+    setIsMounted(true)
+    
     // Generate stars only on the client side to avoid hydration issues
     const generatedStars = Array.from({ length: 100 }).map(() => ({
       size: Math.random() * 3 + 1,
@@ -28,7 +32,9 @@ export function StarField() {
     setStars(generatedStars)
   }, [])
   
-  if (stars.length === 0) return null
+  // Don't render anything during SSR or first client render
+  // This ensures hydration matches between server and client
+  if (!isMounted) return <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" />
   
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
