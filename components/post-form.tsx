@@ -27,6 +27,42 @@ export function PostForm() {
       });
   };
 
+  // Handle image download
+  const handleImageDownload = () => {
+    if (!result?.imageUrl) return;
+    
+    // Create a filename based on the prompt
+    const filename = `${prompt.trim().substring(0, 20).replace(/\s+/g, '-').toLowerCase()}-${new Date().getTime()}.jpg`;
+    
+    // Check if it's a data URL (base64)
+    if (result.imageUrl.startsWith('data:image')) {
+      // For data URLs
+      const link = document.createElement('a');
+      link.href = result.imageUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      // For regular URLs, fetch the image first
+      fetch(result.imageUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const blobUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(blobUrl);
+        })
+        .catch(error => {
+          console.error('Error downloading image:', error);
+        });
+    }
+  };
+
   // Direct fetch function to manually control the API call
   const generatePost = async () => {
     if (!prompt.trim()) return
@@ -158,7 +194,7 @@ export function PostForm() {
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Post about running era"
+                  placeholder="E.g., New product launch, Summer collection, Eco-friendly initiative, Company milestone..."
                   style={{
                     width: "100%",
                     padding: "16px",
@@ -358,7 +394,8 @@ export function PostForm() {
                   marginBottom: "24px",
                   borderRadius: "12px",
                   overflow: "hidden",
-                  boxShadow: "0 8px 20px rgba(0, 0, 0, 0.2)"
+                  boxShadow: "0 8px 20px rgba(0, 0, 0, 0.2)",
+                  position: "relative"
                 }}>
                   <img 
                     src={result.imageUrl} 
@@ -370,6 +407,36 @@ export function PostForm() {
                       maxHeight: "400px"
                     }}
                   />
+                  <div style={{
+                    position: "absolute",
+                    top: "12px",
+                    right: "12px",
+                    zIndex: 10
+                  }}>
+                    <button
+                      onClick={handleImageDownload}
+                      style={{
+                        backgroundColor: "rgba(0, 0, 0, 0.6)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "8px 12px",
+                        fontSize: "14px",
+                        cursor: "pointer",
+                        backdropFilter: "blur(4px)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px"
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                      </svg>
+                      Download
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -508,33 +575,6 @@ export function PostForm() {
                       </span>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {result.visualPrompt && (
-                <div style={{ 
-                  backgroundColor: "rgba(29, 23, 52, 0.5)",
-                  border: "1px solid rgba(91, 77, 168, 0.2)",
-                  borderRadius: "12px",
-                  padding: "24px",
-                  marginBottom: "24px"
-                }}>
-                  <h3 style={{ 
-                    fontSize: "18px", 
-                    fontWeight: "600", 
-                    marginBottom: "16px",
-                    color: "#d8d4ea"
-                  }}>
-                    Visual Prompt
-                  </h3>
-                  <p style={{ 
-                    fontSize: "16px", 
-                    lineHeight: "1.6",
-                    color: "white",
-                    fontStyle: "italic"
-                  }}>
-                    {result.visualPrompt}
-                  </p>
                 </div>
               )}
             </div>
