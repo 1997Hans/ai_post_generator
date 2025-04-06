@@ -73,20 +73,44 @@ export function PostGenerator() {
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="create">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="create">Create Post</TabsTrigger>
-          <TabsTrigger value="preview" disabled={!postContent}>
+      <Tabs 
+        defaultValue="create" 
+        className="rounded-xl p-1 overflow-hidden relative shadow-lg"
+        style={{
+          backgroundColor: "rgba(20, 15, 35, 0.6)",
+          backdropFilter: "blur(12px)",
+          border: "1px solid rgba(91, 77, 168, 0.2)",
+        }}
+      >
+        <div 
+          className="absolute inset-0 z-0 opacity-10 pointer-events-none" 
+          style={{
+            background: "linear-gradient(90deg, #ea4c89 0%, #8f4bde 50%, #4668ea 100%)",
+            borderRadius: "inherit"
+          }}
+        />
+        <TabsList className="grid w-full grid-cols-2 mb-4 bg-[#16123240] relative z-10">
+          <TabsTrigger 
+            value="create" 
+            className="data-[state=active]:text-transparent data-[state=active]:bg-clip-text data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ea4c89] data-[state=active]:via-[#8f4bde] data-[state=active]:to-[#4668ea] data-[state=active]:bg-[#1f193860]"
+          >
+            Create Post
+          </TabsTrigger>
+          <TabsTrigger 
+            value="preview" 
+            disabled={!postContent}
+            className="data-[state=active]:text-transparent data-[state=active]:bg-clip-text data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ea4c89] data-[state=active]:via-[#8f4bde] data-[state=active]:to-[#4668ea] data-[state=active]:bg-[#1f193860]"
+          >
             Preview
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="create" className="space-y-4">
+        <TabsContent value="create" className="space-y-4 p-4 relative z-10">
           <PromptForm 
             onSubmit={handleGeneratePost} 
             isGenerating={isGenerating} 
           />
         </TabsContent>
-        <TabsContent value="preview">
+        <TabsContent value="preview" className="p-4 relative z-10">
           {postContent && (
             <PostPreview 
               post={postContent} 
