@@ -395,7 +395,12 @@ export function PostForm() {
                   borderRadius: "12px",
                   overflow: "hidden",
                   boxShadow: "0 8px 20px rgba(0, 0, 0, 0.2)",
-                  position: "relative"
+                  position: "relative",
+                  background: "linear-gradient(to bottom, rgba(29, 23, 52, 0.3), rgba(29, 23, 52, 0.6))",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  maxHeight: "550px"
                 }}>
                   <img 
                     src={result.imageUrl} 
@@ -403,8 +408,10 @@ export function PostForm() {
                     style={{
                       width: "100%",
                       height: "auto",
-                      objectFit: "cover",
-                      maxHeight: "400px"
+                      objectFit: "contain",
+                      maxWidth: "100%",
+                      maxHeight: "550px",
+                      display: "block"
                     }}
                   />
                   <div style={{
