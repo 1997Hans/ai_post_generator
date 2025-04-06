@@ -4,7 +4,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getGeminiModel, GeminiError, isGeminiConfigured } from '@/lib/gemini';
 import { PostRequestInput, PostOutput } from '@/lib/types';
 import { generatePostPrompt, getSystemPrompt } from '@/lib/prompts';
-import { StreamingTextResponse, Message } from 'ai';
 
 /**
  * Server action to generate a social media post using Google Gemini
@@ -13,9 +12,12 @@ import { StreamingTextResponse, Message } from 'ai';
 export async function generateGeminiPost(
   input: PostRequestInput
 ): Promise<Response> {
+  console.log('generateGeminiPost called with:', input);
+  
   try {
     // Validate API configuration
     if (!isGeminiConfigured()) {
+      console.error('Gemini API not configured');
       throw new GeminiError(
         "Gemini API key not configured. Please check your environment variables.",
         401
@@ -24,6 +26,7 @@ export async function generateGeminiPost(
 
     // Basic input validation
     if (!input.topic) {
+      console.error('Missing topic in input');
       throw new GeminiError("Topic is required for post generation", 400);
     }
 
@@ -36,50 +39,40 @@ export async function generateGeminiPost(
       brandGuidelines: input.brandGuidelines,
       maxLength: input.maxLength,
     });
+    
+    console.log('Generated prompt:', userPrompt);
 
     // Get the Gemini model
     const model = getGeminiModel();
+    console.log('Gemini model initialized successfully');
 
-    // Create a streaming chat session
-    const chat = model.startChat({
-      history: [
-        { role: 'user', parts: [{ text: getSystemPrompt() }] },
-        { role: 'model', parts: [{ text: 'I understand. I will act as an expert social media content creator.' }] },
-      ],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 1000,
-      },
-    });
-
-    // Send the message and get streaming response
-    const result = await chat.sendMessageStream(userPrompt);
-
-    // Create a Response with ReadableStream for streaming
-    const stream = new ReadableStream({
-      async start(controller) {
-        // Process the stream
-        const textDecoder = new TextDecoder();
-        for await (const chunk of result.stream) {
-          const text = chunk.text();
-          controller.enqueue(new TextEncoder().encode(text));
-        }
-        controller.close();
-      },
-    });
-
-    // Return streaming response
-    return new Response(stream);
+    // For now, use a non-streaming approach to simplify debugging
+    try {
+      const result = await model.generateContent(userPrompt);
+      const text = result.response.text();
+      console.log('Generated content:', text.substring(0, 100) + '...');
+      
+      // Return a simple response for now
+      return new Response(text, {
+        headers: { 'Content-Type': 'text/plain' }
+      });
+    } catch (genError) {
+      console.error('Generation error:', genError);
+      throw new GeminiError(
+        `Error during content generation: ${genError.message}`,
+        500
+      );
+    }
   } catch (error) {
     // Handle and transform errors
+    console.error('Error in generateGeminiPost:', error);
+    
     if (error instanceof GeminiError) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: error.statusCode || 500,
         headers: { 'Content-Type': 'application/json' }
       });
     }
-
-    console.error("Error generating post with Gemini:", error);
     
     // Generic error fallback
     return new Response(

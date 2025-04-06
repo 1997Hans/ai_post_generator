@@ -2,242 +2,264 @@
 
 import { useState } from "react"
 import { SparklesIcon } from "lucide-react"
-import { useChat } from "ai/react"
 
 export function PostForm() {
   const [activeTab, setActiveTab] = useState("create")
   const [prompt, setPrompt] = useState("")
-  const [platform, setPlatform] = useState("instagram")
-  const [tone, setTone] = useState("professional")
+  const [platform, setPlatform] = useState("facebook")
+  const [tone, setTone] = useState("friendly")
+  const [errorMsg, setErrorMsg] = useState("")
+  const [result, setResult] = useState<any>(null)
 
-  const { messages, isLoading, handleSubmit: handleChatSubmit } = useChat({
-    api: '/api/chat',
-    body: {
-      topic: prompt,
-      tone,
-      platform
-    },
-    onResponse: (response) => {
-      console.log('Response received', response)
-      setActiveTab("preview")
-    },
-  })
+  // Use the direct fetch approach first to debug
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Handle copy to clipboard
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        console.log('Copied to clipboard');
+        // You could add a toast notification here
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
+      });
+  };
+
+  // Direct fetch function to manually control the API call
+  const generatePost = async () => {
+    if (!prompt.trim()) return
+    
+    console.log('Generating post with:', { prompt, tone, platform })
+    setIsLoading(true)
+    setErrorMsg("")
+    
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          topic: prompt,
+          tone,
+          platform,
+        }),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to generate content')
+      }
+      
+      const data = await response.json()
+      console.log('Response data:', data)
+      
+      if (data && data.content) {
+        try {
+          // Parse the JSON content from the response
+          const parsedContent = JSON.parse(data.content);
+          setResult(parsedContent);
+          setActiveTab("preview");
+        } catch (parseError) {
+          console.error('Error parsing response JSON:', parseError);
+          setErrorMsg('Invalid response format from API');
+        }
+      } else {
+        throw new Error('Invalid response format')
+      }
+    } catch (error) {
+      console.error('Error generating post:', error)
+      setErrorMsg(error.message || 'Failed to generate post')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleFormSubmit = (e) => {
     e.preventDefault()
-    if (!prompt.trim()) return
-    
-    handleChatSubmit(e)
+    generatePost()
   }
 
   return (
-    <div style={{
-      borderRadius: "16px",
-      overflow: "hidden",
-      padding: "4px",
-      position: "relative",
-      boxShadow: "0 10px 30px rgba(0, 0, 0, 0.2)",
-      backgroundColor: "rgba(20, 15, 35, 0.6)",
-      backdropFilter: "blur(12px)",
-      border: "1px solid rgba(91, 77, 168, 0.2)",
-    }}>
-      <div style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 0,
-        opacity: 0.1,
-        pointerEvents: "none",
-        background: "linear-gradient(90deg, #ea4c89 0%, #8f4bde 50%, #4668ea 100%)",
-        borderRadius: "inherit"
-      }} />
-      
+    <div>
+      {/* Error message display */}
+      {errorMsg && (
+        <div style={{
+          padding: "12px 16px",
+          marginBottom: "20px",
+          borderRadius: "8px",
+          backgroundColor: "rgba(220, 38, 38, 0.1)", 
+          border: "1px solid rgba(220, 38, 38, 0.2)",
+          color: "#ef4444"
+        }}>
+          <p>{errorMsg}</p>
+        </div>
+      )}
+    
       {/* Tabs */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        width: "100%",
-        marginBottom: "16px",
-        position: "relative",
-        zIndex: 1,
-        backgroundColor: "rgba(22, 18, 50, 0.25)"
+      <div style={{ 
+        display: "flex", 
+        borderBottom: "1px solid rgba(91, 77, 168, 0.2)",
+        marginBottom: "24px"
       }}>
-        <button 
+        <button
           onClick={() => setActiveTab("create")}
           style={{
             padding: "12px 16px",
-            background: activeTab === "create" ? "rgba(31, 25, 56, 0.4)" : "transparent",
-            border: "none",
-            cursor: "pointer",
-            color: activeTab === "create" ? "transparent" : "rgba(255, 255, 255, 0.6)",
-            fontWeight: "500",
-            fontSize: "16px",
-            backgroundImage: activeTab === "create" 
-              ? "linear-gradient(to right, #ea4c89, #8f4bde, #4668ea)" 
-              : "none",
-            backgroundClip: activeTab === "create" ? "text" : "none",
-            WebkitBackgroundClip: activeTab === "create" ? "text" : "none",
+            fontWeight: activeTab === "create" ? "600" : "400",
+            color: activeTab === "create" ? "#8f4bde" : "#a7a3bc",
+            borderBottom: activeTab === "create" ? "2px solid #8f4bde" : "2px solid transparent",
+            background: "none",
+            borderLeft: "none", 
+            borderRight: "none",
+            borderTop: "none",
+            cursor: "pointer"
           }}
         >
           Create Post
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab("preview")}
-          disabled={!prompt.trim()}
+          disabled={!result}
           style={{
             padding: "12px 16px",
-            background: activeTab === "preview" ? "rgba(31, 25, 56, 0.4)" : "transparent",
-            border: "none",
-            cursor: !prompt.trim() ? "not-allowed" : "pointer",
-            color: activeTab === "preview" ? "transparent" : "rgba(255, 255, 255, 0.6)",
-            opacity: !prompt.trim() ? 0.5 : 1,
-            fontWeight: "500",
-            fontSize: "16px",
-            backgroundImage: activeTab === "preview" 
-              ? "linear-gradient(to right, #ea4c89, #8f4bde, #4668ea)" 
-              : "none",
-            backgroundClip: activeTab === "preview" ? "text" : "none",
-            WebkitBackgroundClip: activeTab === "preview" ? "text" : "none",
+            fontWeight: activeTab === "preview" ? "600" : "400",
+            color: activeTab === "preview" ? "#8f4bde" : "#a7a3bc",
+            borderBottom: activeTab === "preview" ? "2px solid #8f4bde" : "2px solid transparent",
+            background: "none",
+            borderLeft: "none", 
+            borderRight: "none",
+            borderTop: "none",
+            cursor: result ? "pointer" : "not-allowed",
+            opacity: result ? 1 : 0.5
           }}
         >
           Preview
         </button>
       </div>
       
-      {/* Create Form */}
+      {/* Create Tab */}
       {activeTab === "create" && (
-        <div style={{ padding: "24px", position: "relative", zIndex: 1 }}>
+        <div>
           <form onSubmit={handleFormSubmit}>
             <div style={{ marginBottom: "24px" }}>
-              <label 
-                htmlFor="prompt" 
-                style={{
-                  display: "block",
-                  marginBottom: "8px",
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  color: "transparent",
-                  backgroundImage: "linear-gradient(to right, #ea4c89, #8f4bde, #4668ea)",
-                  backgroundClip: "text",
-                  WebkitBackgroundClip: "text",
-                }}
-              >
+              <h2 style={{ 
+                fontSize: "18px", 
+                fontWeight: "600", 
+                marginBottom: "8px",
+                color: "#d8d4ea"
+              }}>
                 What would you like to post about?
-              </label>
-              <input
-                id="prompt"
-                type="text"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="e.g., Announce our summer collection with beach vibes"
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  height: "48px",
-                  backgroundColor: "rgba(22, 18, 50, 0.3)",
-                  border: "1px solid rgba(91, 77, 168, 0.2)",
-                  borderRadius: "8px",
-                  color: "white",
-                  fontSize: "16px",
-                  outline: "none",
-                }}
-                required
-              />
-            </div>
-            
-            <div style={{ 
-              display: "grid", 
-              gridTemplateColumns: "1fr 1fr", 
-              gap: "16px",
-              marginBottom: "32px" 
-            }}>
-              <div>
-                <label 
-                  htmlFor="platform" 
-                  style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    color: "transparent",
-                    backgroundImage: "linear-gradient(to right, #ea4c89, #8f4bde, #4668ea)",
-                    backgroundClip: "text",
-                    WebkitBackgroundClip: "text",
-                  }}
-                >
-                  Platform
-                </label>
-                <select
-                  id="platform"
-                  value={platform}
-                  onChange={(e) => setPlatform(e.target.value)}
+              </h2>
+              <div style={{ position: "relative" }}>
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Post about running era"
                   style={{
                     width: "100%",
-                    padding: "8px 12px",
-                    height: "40px",
-                    backgroundColor: "rgba(22, 18, 50, 0.3)",
+                    padding: "16px",
+                    borderRadius: "12px",
+                    backgroundColor: "rgba(29, 23, 52, 0.5)",
                     border: "1px solid rgba(91, 77, 168, 0.2)",
-                    borderRadius: "8px",
                     color: "white",
                     fontSize: "16px",
-                    outline: "none",
-                    appearance: "none",
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right 12px center",
-                    backgroundSize: "16px"
+                    minHeight: "120px",
+                    resize: "none",
+                    fontFamily: "inherit"
                   }}
-                >
-                  <option value="instagram">Instagram</option>
-                  <option value="twitter">Twitter/X</option>
-                  <option value="facebook">Facebook</option>
-                  <option value="linkedin">LinkedIn</option>
-                  <option value="tiktok">TikTok</option>
-                </select>
+                />
               </div>
-              
-              <div>
-                <label 
-                  htmlFor="tone" 
-                  style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    color: "transparent",
-                    backgroundImage: "linear-gradient(to right, #ea4c89, #8f4bde, #4668ea)",
-                    backgroundClip: "text",
-                    WebkitBackgroundClip: "text",
-                  }}
-                >
+            </div>
+
+            <div style={{ 
+              display: "flex", 
+              gap: "24px", 
+              marginBottom: "32px",
+              flexWrap: "wrap"
+            }}>
+              <div style={{ flex: 1, minWidth: "200px" }}>
+                <h2 style={{ 
+                  fontSize: "16px", 
+                  fontWeight: "600", 
+                  marginBottom: "8px",
+                  color: "#d8d4ea"
+                }}>
+                  Platform
+                </h2>
+                <div style={{ position: "relative" }}>
+                  <select
+                    value={platform}
+                    onChange={(e) => setPlatform(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      borderRadius: "8px",
+                      backgroundColor: "rgba(29, 23, 52, 0.5)",
+                      border: "1px solid rgba(91, 77, 168, 0.2)",
+                      color: "white",
+                      fontSize: "16px",
+                      appearance: "none"
+                    }}
+                  >
+                    <option value="facebook">Facebook</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="twitter">Twitter</option>
+                    <option value="linkedin">LinkedIn</option>
+                  </select>
+                  <div style={{ 
+                    position: "absolute", 
+                    right: "16px", 
+                    top: "50%", 
+                    transform: "translateY(-50%)",
+                    pointerEvents: "none"
+                  }}>
+                    ▼
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ flex: 1, minWidth: "200px" }}>
+                <h2 style={{ 
+                  fontSize: "16px", 
+                  fontWeight: "600", 
+                  marginBottom: "8px",
+                  color: "#d8d4ea"
+                }}>
                   Tone
-                </label>
-                <select
-                  id="tone"
-                  value={tone}
-                  onChange={(e) => setTone(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    height: "40px",
-                    backgroundColor: "rgba(22, 18, 50, 0.3)",
-                    border: "1px solid rgba(91, 77, 168, 0.2)",
-                    borderRadius: "8px",
-                    color: "white",
-                    fontSize: "16px",
-                    outline: "none",
-                    appearance: "none",
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right 12px center",
-                    backgroundSize: "16px"
-                  }}
-                >
-                  <option value="professional">Professional</option>
-                  <option value="casual">Casual</option>
-                  <option value="friendly">Friendly</option>
-                  <option value="exciting">Exciting</option>
-                  <option value="humorous">Humorous</option>
-                </select>
+                </h2>
+                <div style={{ position: "relative" }}>
+                  <select
+                    value={tone}
+                    onChange={(e) => setTone(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      borderRadius: "8px",
+                      backgroundColor: "rgba(29, 23, 52, 0.5)",
+                      border: "1px solid rgba(91, 77, 168, 0.2)",
+                      color: "white",
+                      fontSize: "16px",
+                      appearance: "none"
+                    }}
+                  >
+                    <option value="friendly">Friendly</option>
+                    <option value="professional">Professional</option>
+                    <option value="casual">Casual</option>
+                    <option value="enthusiastic">Enthusiastic</option>
+                    <option value="informative">Informative</option>
+                  </select>
+                  <div style={{ 
+                    position: "absolute", 
+                    right: "16px", 
+                    top: "50%", 
+                    transform: "translateY(-50%)",
+                    pointerEvents: "none"
+                  }}>
+                    ▼
+                  </div>
+                </div>
               </div>
             </div>
             
@@ -286,55 +308,173 @@ export function PostForm() {
       
       {/* Preview Tab */}
       {activeTab === "preview" && (
-        <div style={{ padding: "24px", color: "white", position: "relative", zIndex: 1 }}>
-          {messages.length > 1 ? (
+        <div>
+          {result ? (
             <div>
-              <pre style={{ 
-                whiteSpace: "pre-wrap",
-                fontSize: "15px",
-                fontFamily: "inherit",
-                backgroundColor: "rgba(31, 25, 56, 0.4)",
-                padding: "16px",
-                borderRadius: "8px",
-                maxHeight: "400px",
-                overflow: "auto"
-              }}>
-                {messages[messages.length - 1].content}
-              </pre>
-              
               <div style={{ 
-                display: "flex", 
-                justifyContent: "center", 
-                marginTop: "24px", 
-                gap: "16px" 
+                backgroundColor: "rgba(29, 23, 52, 0.5)",
+                border: "1px solid rgba(91, 77, 168, 0.2)",
+                borderRadius: "12px",
+                padding: "24px",
+                marginBottom: "24px"
               }}>
-                <button
-                  onClick={() => setActiveTab("create")}
-                  style={{
-                    padding: "12px 24px",
-                    borderRadius: "6px",
-                    backgroundColor: "rgba(31, 25, 56, 0.4)",
-                    border: "1px solid rgba(91, 77, 168, 0.3)",
-                    color: "#a7a3bc",
-                    cursor: "pointer"
-                  }}
-                >
-                  Edit Prompt
-                </button>
-                
-                <button
-                  style={{
-                    padding: "12px 24px",
-                    borderRadius: "6px",
-                    backgroundColor: "rgba(143, 75, 222, 0.15)",
-                    border: "1px solid rgba(143, 75, 222, 0.3)",
-                    color: "white",
-                    cursor: "pointer"
-                  }}
-                >
-                  Copy Content
-                </button>
+                <h3 style={{ 
+                  fontSize: "18px", 
+                  fontWeight: "600", 
+                  marginBottom: "16px",
+                  color: "#d8d4ea",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between"
+                }}>
+                  <span>Main Content</span>
+                  <button 
+                    onClick={() => copyToClipboard(result.mainContent)}
+                    style={{
+                      backgroundColor: "rgba(143, 75, 222, 0.1)",
+                      border: "1px solid rgba(143, 75, 222, 0.2)",
+                      borderRadius: "4px",
+                      padding: "4px 8px",
+                      fontSize: "12px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Copy
+                  </button>
+                </h3>
+                <p style={{ 
+                  fontSize: "16px", 
+                  lineHeight: "1.6",
+                  color: "white"
+                }}>
+                  {result.mainContent}
+                </p>
               </div>
+
+              {result.caption && (
+                <div style={{ 
+                  backgroundColor: "rgba(29, 23, 52, 0.5)",
+                  border: "1px solid rgba(91, 77, 168, 0.2)",
+                  borderRadius: "12px",
+                  padding: "24px",
+                  marginBottom: "24px"
+                }}>
+                  <h3 style={{ 
+                    fontSize: "18px", 
+                    fontWeight: "600", 
+                    marginBottom: "16px",
+                    color: "#d8d4ea",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between"
+                  }}>
+                    <span>Caption</span>
+                    <button 
+                      onClick={() => copyToClipboard(result.caption)}
+                      style={{
+                        backgroundColor: "rgba(143, 75, 222, 0.1)",
+                        border: "1px solid rgba(143, 75, 222, 0.2)",
+                        borderRadius: "4px",
+                        padding: "4px 8px",
+                        fontSize: "12px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      Copy
+                    </button>
+                  </h3>
+                  <p style={{ 
+                    fontSize: "16px", 
+                    lineHeight: "1.6",
+                    color: "white"
+                  }}>
+                    {result.caption}
+                  </p>
+                </div>
+              )}
+
+              {result.hashtags && result.hashtags.length > 0 && (
+                <div style={{ 
+                  backgroundColor: "rgba(29, 23, 52, 0.5)",
+                  border: "1px solid rgba(91, 77, 168, 0.2)",
+                  borderRadius: "12px",
+                  padding: "24px",
+                  marginBottom: "24px"
+                }}>
+                  <h3 style={{ 
+                    fontSize: "18px", 
+                    fontWeight: "600", 
+                    marginBottom: "16px",
+                    color: "#d8d4ea",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between"
+                  }}>
+                    <span>Hashtags</span>
+                    <button 
+                      onClick={() => copyToClipboard(result.hashtags.map(h => `#${h}`).join(' '))}
+                      style={{
+                        backgroundColor: "rgba(143, 75, 222, 0.1)",
+                        border: "1px solid rgba(143, 75, 222, 0.2)",
+                        borderRadius: "4px",
+                        padding: "4px 8px",
+                        fontSize: "12px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      Copy
+                    </button>
+                  </h3>
+                  <div style={{ 
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "8px"
+                  }}>
+                    {result.hashtags.map((tag, index) => (
+                      <span 
+                        key={index}
+                        style={{
+                          backgroundColor: "rgba(70, 104, 234, 0.1)",
+                          border: "1px solid rgba(70, 104, 234, 0.2)",
+                          borderRadius: "4px",
+                          padding: "4px 8px",
+                          fontSize: "14px",
+                          color: "#a7a3bc"
+                        }}
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {result.visualPrompt && (
+                <div style={{ 
+                  backgroundColor: "rgba(29, 23, 52, 0.5)",
+                  border: "1px solid rgba(91, 77, 168, 0.2)",
+                  borderRadius: "12px",
+                  padding: "24px",
+                  marginBottom: "24px"
+                }}>
+                  <h3 style={{ 
+                    fontSize: "18px", 
+                    fontWeight: "600", 
+                    marginBottom: "16px",
+                    color: "#d8d4ea"
+                  }}>
+                    Visual Prompt
+                  </h3>
+                  <p style={{ 
+                    fontSize: "16px", 
+                    lineHeight: "1.6",
+                    color: "white",
+                    fontStyle: "italic"
+                  }}>
+                    {result.visualPrompt}
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <div style={{ 
