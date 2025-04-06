@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/react";
 import { StarField } from "@/components/star-field";
+import { PostProvider } from '@/lib/context/PostContext'
 
 const spaceGrotesk = Space_Grotesk({ 
   subsets: ["latin"],
@@ -13,8 +14,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Social Media Post Generator",
-  description: "AI-powered social media post generator with beautiful designs",
+  title: "AI Social Media Post Generator",
+  description: "Generate compelling social media posts with AI",
 };
 
 export default function RootLayout({
@@ -48,11 +49,13 @@ export default function RootLayout({
           disableTransitionOnChange
           forcedTheme="dark"
         >
-          <StarField />
-          <div className="min-h-screen relative z-10">
-            {children}
-          </div>
-          <Toaster />
+          <PostProvider>
+            <StarField />
+            <div className="min-h-screen relative z-10">
+              {children}
+            </div>
+            <Toaster />
+          </PostProvider>
         </ThemeProvider>
         <Analytics />
       </body>
