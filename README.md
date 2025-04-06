@@ -21,6 +21,7 @@ A modern, lightweight, and modular web app for generating compelling social medi
 | Frontend     | **Next.js 15** (App Router, React 19)            |
 | UI/Styling   | **Tailwind CSS**, **Shadcn UI**, Headless UI     |
 | AI Services  | **Vercel AI SDK** with **Google Gemini** or **OpenAI** |
+| Image Gen    | **Hugging Face Inference API** (free tier available) |
 | Auth (opt)   | **Clerk** or **Supabase Auth**                   |
 | Storage      | **Supabase** (optional: Firebase)                |
 | Hosting      | **Vercel** (fully optimized for this stack)      |
@@ -72,7 +73,13 @@ This application supports two AI providers for text generation:
 - Pay-as-you-go pricing after free credits
 - Potential for higher costs with increased usage
 
-We recommend starting with Gemini for development and testing due to its free tier.
+### 3. Hugging Face (Image Generation)
+- Free tier available with rate limits
+- No credit card required to get started
+- Variety of models for different image styles
+- Simple REST API for text-to-image generation
+
+We recommend starting with Gemini for text and Hugging Face for images during development and testing due to their free tiers.
 
 ---
 
@@ -99,8 +106,8 @@ npm install ai @google/generative-ai --legacy-peer-deps
 # 5. Install Shadcn UI components
 npx shadcn-ui@latest init
 
-# 6. (Optional) Install Replicate SDK for image generation
-npm install replicate
+# 6. Install Hugging Face for image generation
+npm install @huggingface/inference uuid
 
 # 7. (Optional) Install Clerk for authentication
 npm install @clerk/nextjs
@@ -123,8 +130,9 @@ GEMINI_API_KEY=AIzaSyDWbIizsGJ-c3xI_yjF4oFSDVJ5LpOvVNg
 # OPENAI_API_KEY=your_openai_api_key_here
 # Get your key at: https://platform.openai.com/api-keys
 
-# Replicate API (for image generation)
-REPLICATE_API_TOKEN=your_replicate_api_token_here
+# Hugging Face API (for image generation, free tier available)
+HUGGINGFACE_API_KEY=your_huggingface_api_key_here
+# Get your key at: https://huggingface.co/settings/tokens
 
 # Clerk (if using auth)
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
@@ -144,6 +152,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 4. Create a new API key (no credit card required)
 5. Copy your API key and add it to your `.env.local` file
 
+### Hugging Face API Key (Free)
+1. Visit [Hugging Face](https://huggingface.co/) and create an account
+2. Go to Settings > Access Tokens
+3. Generate a new token with "Read" scope
+4. Copy your token and add it to your `.env.local` file as HUGGINGFACE_API_KEY
+
 ### OpenAI API Key (Alternative)
 1. Visit [OpenAI API Keys](https://platform.openai.com/api-keys)
 2. Sign up or log in to your OpenAI account
@@ -161,10 +175,11 @@ social-post-generator/
 │   ├── actions/              # Server Actions
 │   │   ├── generatePost.ts   # OpenAI post generation
 │   │   ├── generateGeminiPost.ts # Gemini post generation
-│   │   ├── generateImage.ts  # Image generation
+│   │   ├── generateImage.ts  # Image generation with Hugging Face
 │   │   └── refinePrompt.ts   # Prompt refinement
 │   ├── api/                  # API Routes
-│   │   └── chat/             # Chat API endpoint
+│   │   ├── chat/             # Chat API endpoint
+│   │   └── upload/           # Image upload endpoint
 │   ├── (auth)/               # Auth-protected routes
 │   │   └── dashboard/        # Admin dashboard
 │   ├── page.tsx              # Home page
@@ -174,12 +189,16 @@ social-post-generator/
 │   ├── TestGeminiGenerator.tsx # Gemini test component
 │   ├── PostPreview.tsx       # Preview of generated post
 │   ├── ToneSelector.tsx      # Tone selection component
-│   └── ImagePreview.tsx      # Image preview component
+│   ├── ImagePreview.tsx      # Image preview component
+│   └── ImageUploader.tsx     # Component for uploading images
 ├── lib/                      # Utility functions
 │   ├── openai.ts             # OpenAI configuration
 │   ├── gemini.ts             # Gemini configuration
+│   ├── huggingface.ts        # Hugging Face configuration
 │   ├── types.ts              # TypeScript types
 │   ├── prompts.ts            # AI prompt templates
+│   ├── image-prompts.ts      # Image generation prompts
+│   ├── image-upload.ts       # Image upload utilities
 │   ├── error-handler.ts      # Error handling utilities
 │   └── utils.ts              # Helper functions
 ├── ui/                       # Shadcn UI components
@@ -188,6 +207,7 @@ social-post-generator/
 │   ├── input.tsx
 │   └── ... other UI components
 ├── public/                   # Static assets
+│   └── uploads/              # Folder for uploaded images
 ├── .env.local                # Environment variables
 ├── next.config.js            # Next.js configuration
 ├── tailwind.config.js        # Tailwind CSS configuration
@@ -213,8 +233,9 @@ The main user flow for generating AI posts:
    - Generates post content, caption, and hashtags
 
 3. **Image Generation** (`app/actions/generateImage.ts`)
-   - Uses Replicate API to create custom visuals
+   - Uses Hugging Face API to create custom visuals
    - Options for different styles (realistic, artistic, etc.)
+   - Also supports direct image uploads
 
 4. **Preview & Edit** (`components/PostPreview.tsx`)
    - Users can view the generated content
@@ -260,22 +281,22 @@ Common issues and solutions:
 ### 1. API Key Issues
 
 **Problem**: "API key not configured" error.
-**Solution**: Double-check your `.env.local` file and ensure the correct API key (GEMINI_API_KEY or OPENAI_API_KEY) is set up.
+**Solution**: Double-check your `.env.local` file and ensure the correct API key (GEMINI_API_KEY or HUGGINGFACE_API_KEY) is set up.
 
 ### 2. Gemini API Errors
 
 **Problem**: "Failed to fetch" errors with Gemini API.
 **Solution**: Ensure you're using the correct API key and that you haven't exceeded the rate limits (60 requests/minute).
 
-### 3. OpenAI API Errors
+### 3. Hugging Face API Errors
 
-**Problem**: Authentication errors with OpenAI.
-**Solution**: Verify your account has a valid payment method and your API key is correct.
+**Problem**: "Failed to generate image" errors.
+**Solution**: Verify your Hugging Face API token and check that you haven't exceeded the free tier limits.
 
 ### 4. Image Generation Errors
 
 **Problem**: Images not generating or errors in the console.
-**Solution**: Verify your Replicate API token and check network requests for specific error messages.
+**Solution**: Check if the model ID is correct and that the prompt is not violating content policies.
 
 ### 5. Server Actions Not Working
 
@@ -308,6 +329,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Vercel AI SDK](https://sdk.vercel.ai/docs) for AI integration
 - [Google Gemini](https://ai.google.dev/) for free AI text generation
 - [OpenAI](https://openai.com/) for GPT models
+- [Hugging Face](https://huggingface.co/) for free image generation
 - [Tailwind CSS](https://tailwindcss.com/) for styling
 - [Shadcn UI](https://ui.shadcn.com/) for beautiful UI components
-- [Replicate](https://replicate.com/) for image generation capabilities

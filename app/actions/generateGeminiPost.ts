@@ -4,6 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getGeminiModel, GeminiError, isGeminiConfigured } from '@/lib/gemini';
 import { PostRequestInput, PostOutput } from '@/lib/types';
 import { generatePostPrompt, getSystemPrompt } from '@/lib/prompts';
+import { generatePostImage } from './generateImage';
 
 /**
  * Server action to generate a social media post using Google Gemini
@@ -141,11 +142,23 @@ export async function generateGeminiPostNonStreaming(
     try {
       const parsedContent = JSON.parse(content) as PostOutput;
       
+      // Generate image based on the visual prompt if available
+      let imageUrl = null;
+      if (parsedContent.visualPrompt) {
+        imageUrl = await generatePostImage(
+          parsedContent.mainContent,
+          parsedContent.visualPrompt,
+          input.visualStyle,
+          input.platform
+        );
+      }
+      
       return {
         mainContent: parsedContent.mainContent || "",
         caption: parsedContent.caption || "",
         hashtags: parsedContent.hashtags || [],
         visualPrompt: parsedContent.visualPrompt || "",
+        imageUrl: imageUrl || undefined,
       };
     } catch (parseError) {
       console.error("Error parsing Gemini response:", parseError);

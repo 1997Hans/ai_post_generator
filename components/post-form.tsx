@@ -8,6 +8,7 @@ export function PostForm() {
   const [prompt, setPrompt] = useState("")
   const [platform, setPlatform] = useState("facebook")
   const [tone, setTone] = useState("friendly")
+  const [visualStyle, setVisualStyle] = useState("realistic")
   const [errorMsg, setErrorMsg] = useState("")
   const [result, setResult] = useState<any>(null)
 
@@ -30,7 +31,7 @@ export function PostForm() {
   const generatePost = async () => {
     if (!prompt.trim()) return
     
-    console.log('Generating post with:', { prompt, tone, platform })
+    console.log('Generating post with:', { prompt, tone, platform, visualStyle })
     setIsLoading(true)
     setErrorMsg("")
     
@@ -44,6 +45,7 @@ export function PostForm() {
           topic: prompt,
           tone,
           platform,
+          visualStyle,
         }),
       })
       
@@ -261,6 +263,45 @@ export function PostForm() {
                   </div>
                 </div>
               </div>
+
+              <div style={{ flex: 1, minWidth: "200px" }}>
+                <h2 style={{ 
+                  fontSize: "16px", 
+                  fontWeight: "600", 
+                  marginBottom: "8px",
+                  color: "#d8d4ea"
+                }}>
+                  Visual Style
+                </h2>
+                <div style={{ position: "relative" }}>
+                  <select
+                    value={visualStyle}
+                    onChange={(e) => setVisualStyle(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      borderRadius: "8px",
+                      backgroundColor: "rgba(29, 23, 52, 0.5)",
+                      border: "1px solid rgba(91, 77, 168, 0.2)",
+                      color: "white",
+                      appearance: "none",
+                      WebkitAppearance: "none",
+                      MozAppearance: "none",
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%238f4bde' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 16px center",
+                      fontSize: "16px",
+                      fontFamily: "inherit"
+                    }}
+                  >
+                    <option value="realistic">Realistic Photo</option>
+                    <option value="artistic">Artistic</option>
+                    <option value="minimalist">Minimalist</option>
+                    <option value="illustrated">Illustrated</option>
+                    <option value="cinematic">Cinematic</option>
+                  </select>
+                </div>
+              </div>
             </div>
             
             <div style={{ display: "flex", justifyContent: "center" }}>
@@ -311,6 +352,27 @@ export function PostForm() {
         <div>
           {result ? (
             <div>
+              {/* Image display */}
+              {result.imageUrl && (
+                <div style={{ 
+                  marginBottom: "24px",
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                  boxShadow: "0 8px 20px rgba(0, 0, 0, 0.2)"
+                }}>
+                  <img 
+                    src={result.imageUrl} 
+                    alt="Generated visual"
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      objectFit: "cover",
+                      maxHeight: "400px"
+                    }}
+                  />
+                </div>
+              )}
+
               <div style={{ 
                 backgroundColor: "rgba(29, 23, 52, 0.5)",
                 border: "1px solid rgba(91, 77, 168, 0.2)",

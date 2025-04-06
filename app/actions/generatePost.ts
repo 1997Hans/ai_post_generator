@@ -1,32 +1,35 @@
 "use server";
 
-import { OpenAIStream, StreamingTextResponse } from "ai";
-import openai, { OpenAIError, isOpenAIConfigured } from "@/lib/openai";
-import { PostRequestInput, PostOutput } from "@/lib/types";
-import { generatePostPrompt, getSystemPrompt } from "@/lib/prompts";
+import OpenAI from 'openai';
+import { OpenAIStream, StreamingTextResponse } from 'ai';
+import { PostRequestInput, PostOutput } from '@/lib/types';
+import { generatePostPrompt, getSystemPrompt } from '@/lib/prompts';
+import { handleApiError } from '@/lib/error-handler';
+import { generatePostImage } from './generateImage';
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || '',
+});
 
 /**
- * Server action to generate a social media post using OpenAI
- * Supports streaming responses with Vercel AI SDK
+ * Generates a social media post using OpenAI API
+ * Returns a streaming response for better UX
  */
-export async function generatePost(
-  input: PostRequestInput
-): Promise<StreamingTextResponse> {
+export async function generatePost(input: PostRequestInput): Promise<Response> {
   try {
-    // Validate API configuration
-    if (!isOpenAIConfigured()) {
-      throw new OpenAIError(
-        "OpenAI API key not configured. Please check your environment variables.",
-        401
-      );
+    // Check if API key is configured
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OpenAI API key not configured. Please check your environment variables.");
     }
 
     // Basic input validation
     if (!input.topic) {
-      throw new OpenAIError("Topic is required for post generation", 400);
+      throw new Error("Topic is required for post generation");
     }
 
-    // Generate formatted prompt for the AI
+    // Generate prompt
+    const systemPrompt = getSystemPrompt();
     const userPrompt = generatePostPrompt({
       topic: input.topic,
       tone: input.tone,
@@ -36,46 +39,30 @@ export async function generatePost(
       maxLength: input.maxLength,
     });
 
-    // Call OpenAI with streaming
+    // Call OpenAI API
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: 'gpt-3.5-turbo',
       messages: [
-        { role: "system", content: getSystemPrompt() },
-        { role: "user", content: userPrompt },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
       ],
       temperature: 0.7,
-      max_tokens: 1000,
       stream: true,
     });
 
-    // Transform the response into a streaming response using Vercel AI SDK
+    // Create a streaming response
     const stream = OpenAIStream(response);
     return new StreamingTextResponse(stream);
+    
   } catch (error) {
-    // Handle and transform errors
-    if (error instanceof OpenAIError) {
-      throw error;
-    }
-
-    console.error("Error generating post:", error);
+    const { message, statusCode } = handleApiError(error);
     
-    // Handle rate limiting errors
-    if (error.statusCode === 429) {
-      throw new OpenAIError("Rate limit exceeded. Please try again later.", 429);
-    }
-    
-    // Handle other API errors
-    if (error.statusCode) {
-      throw new OpenAIError(
-        `OpenAI API error: ${error.message}`,
-        error.statusCode
-      );
-    }
-    
-    // Generic error fallback
-    throw new OpenAIError(
-      "An unexpected error occurred while generating your post.",
-      500
+    return new Response(
+      JSON.stringify({ error: message }),
+      {
+        status: statusCode || 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
     );
   }
 }
@@ -88,20 +75,18 @@ export async function generatePostNonStreaming(
   input: PostRequestInput
 ): Promise<PostOutput> {
   try {
-    // Validate API configuration
-    if (!isOpenAIConfigured()) {
-      throw new OpenAIError(
-        "OpenAI API key not configured. Please check your environment variables.",
-        401
-      );
+    // Check if API key is configured
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OpenAI API key not configured. Please check your environment variables.");
     }
 
     // Basic input validation
     if (!input.topic) {
-      throw new OpenAIError("Topic is required for post generation", 400);
+      throw new Error("Topic is required for post generation");
     }
 
-    // Generate formatted prompt for the AI
+    // Generate prompt
+    const systemPrompt = getSystemPrompt();
     const userPrompt = generatePostPrompt({
       topic: input.topic,
       tone: input.tone,
@@ -111,55 +96,47 @@ export async function generatePostNonStreaming(
       maxLength: input.maxLength,
     });
 
-    // Call OpenAI without streaming
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+    // Call OpenAI API
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
       messages: [
-        { role: "system", content: getSystemPrompt() },
-        { role: "user", content: userPrompt },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
       ],
       temperature: 0.7,
-      max_tokens: 1000,
       stream: false,
     });
 
-    // Parse the JSON response
+    // Extract and parse the content
+    const content = response.choices[0]?.message.content || '';
+    
     try {
-      const content = completion.choices[0]?.message?.content || "";
       const parsedContent = JSON.parse(content) as PostOutput;
+      
+      // Generate image based on the visual prompt if available
+      let imageUrl = null;
+      if (parsedContent.visualPrompt) {
+        imageUrl = await generatePostImage(
+          parsedContent.mainContent,
+          parsedContent.visualPrompt,
+          input.visualStyle,
+          input.platform
+        );
+      }
       
       return {
         mainContent: parsedContent.mainContent || "",
         caption: parsedContent.caption || "",
         hashtags: parsedContent.hashtags || [],
         visualPrompt: parsedContent.visualPrompt || "",
+        imageUrl: imageUrl || undefined,
       };
     } catch (parseError) {
       console.error("Error parsing OpenAI response:", parseError);
-      throw new OpenAIError("Failed to parse AI response. Please try again.", 500);
+      throw new Error("Failed to parse AI response. Please try again.");
     }
   } catch (error) {
-    // Handle and transform errors (same as streaming version)
-    if (error instanceof OpenAIError) {
-      throw error;
-    }
-
-    console.error("Error generating post:", error);
-    
-    if (error.statusCode === 429) {
-      throw new OpenAIError("Rate limit exceeded. Please try again later.", 429);
-    }
-    
-    if (error.statusCode) {
-      throw new OpenAIError(
-        `OpenAI API error: ${error.message}`,
-        error.statusCode
-      );
-    }
-    
-    throw new OpenAIError(
-      "An unexpected error occurred while generating your post.",
-      500
-    );
+    const { message, statusCode } = handleApiError(error);
+    throw new Error(message);
   }
 } 

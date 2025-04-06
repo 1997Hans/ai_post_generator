@@ -16,8 +16,8 @@ export type VisualStyle =
   | 'realistic' 
   | 'artistic' 
   | 'minimalist'
-  | 'abstract'
-  | 'cartoon';
+  | 'illustrated'
+  | 'cinematic';
 
 /**
  * Social media platform types
@@ -45,6 +45,28 @@ export interface PostOutput {
   hashtags: string[];
   visualPrompt: string;
   imageUrl?: string;
+}
+
+/**
+ * Image generation request input
+ */
+export interface ImageRequestInput {
+  prompt: string;
+  visualStyle?: VisualStyle;
+  platform?: Platform;
+  width?: number;
+  height?: number;
+  seed?: number;
+}
+
+/**
+ * Image generation response
+ */
+export interface ImageGenerationResult {
+  imageUrl: string | null;
+  prompt: string;
+  visualStyle: VisualStyle;
+  error?: string;
 }
 
 /**

@@ -1,6 +1,8 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { generatePostPrompt, getSystemPrompt } from '@/lib/prompts';
 import { getGeminiModel, isGeminiConfigured } from '@/lib/gemini';
+import { generateImage } from '@/lib/huggingface';
+import { enhanceImagePrompt } from '@/lib/image-prompts';
 
 // Mock response data for different topics
 const mockResponses = {
@@ -68,7 +70,7 @@ export async function POST(req: Request) {
       topic,
       tone: body.tone || 'friendly',
       platform: body.platform || 'instagram',
-      visualStyle: 'realistic',
+      visualStyle: body.visualStyle || 'realistic',
       maxLength: 280
     });
     
@@ -79,7 +81,7 @@ export async function POST(req: Request) {
     
     if (!apiConfigured) {
       console.log('Gemini API not configured, falling back to mock data');
-      return useMockResponse(topic, formatAsVercelAIMessage);
+      return useMockResponse(topic, formatAsVercelAIMessage, body.visualStyle || 'realistic');
     }
     
     try {
@@ -118,6 +120,35 @@ export async function POST(req: Request) {
         const jsonContent = JSON.parse(text);
         console.log('Successfully parsed JSON response');
         
+        // Generate image using the visual prompt
+        if (jsonContent.visualPrompt) {
+          try {
+            console.log('Generating image for visual prompt:', jsonContent.visualPrompt);
+            const visualStyle = body.visualStyle || 'realistic';
+            
+            // Combine the visual prompt with some content for better context
+            const combinedPrompt = `${jsonContent.visualPrompt} ${jsonContent.mainContent.substring(0, 100)}`;
+            
+            // Enhance the prompt for better image generation
+            const enhancedPrompt = enhanceImagePrompt(combinedPrompt, visualStyle);
+            
+            // Generate the image
+            const imageUrl = await generateImage({
+              prompt: enhancedPrompt,
+              style: visualStyle,
+            });
+            
+            if (imageUrl) {
+              console.log('Successfully generated image');
+              jsonContent.imageUrl = imageUrl;
+            } else {
+              console.log('Image generation failed');
+            }
+          } catch (imageError) {
+            console.error('Error generating image:', imageError);
+          }
+        }
+        
         // Return formatted content for Vercel AI SDK
         return new Response(formatAsVercelAIMessage(JSON.stringify(jsonContent)), {
           headers: { 'Content-Type': 'application/json' }
@@ -131,6 +162,26 @@ export async function POST(req: Request) {
           try {
             const extractedJson = JSON.parse(jsonMatch[0]);
             console.log('Successfully extracted and parsed JSON from response');
+            
+            // Generate image using the visual prompt
+            if (extractedJson.visualPrompt) {
+              try {
+                const visualStyle = body.visualStyle || 'realistic';
+                const combinedPrompt = `${extractedJson.visualPrompt} ${extractedJson.mainContent.substring(0, 100)}`;
+                const enhancedPrompt = enhanceImagePrompt(combinedPrompt, visualStyle);
+                
+                const imageUrl = await generateImage({
+                  prompt: enhancedPrompt,
+                  style: visualStyle,
+                });
+                
+                if (imageUrl) {
+                  extractedJson.imageUrl = imageUrl;
+                }
+              } catch (imageError) {
+                console.error('Error generating image:', imageError);
+              }
+            }
             
             return new Response(formatAsVercelAIMessage(JSON.stringify(extractedJson)), {
               headers: { 'Content-Type': 'application/json' }
@@ -151,7 +202,7 @@ export async function POST(req: Request) {
       console.log('Falling back to mock response due to API error');
       
       // Fall back to mock response if API fails
-      return useMockResponse(topic, formatAsVercelAIMessage);
+      return useMockResponse(topic, formatAsVercelAIMessage, body.visualStyle || 'realistic');
     }
   } catch (error: any) {
     console.error('Chat API error:', error);
@@ -166,7 +217,7 @@ export async function POST(req: Request) {
 }
 
 // Helper function to use mock response as fallback
-function useMockResponse(topic: string, formatAsVercelAIMessage: (content: string) => string) {
+async function useMockResponse(topic: string, formatAsVercelAIMessage: (content: string) => string, visualStyle: string = 'realistic') {
   console.log('Using mock response for topic:', topic);
   
   // Find the most appropriate mock response based on topic
@@ -197,6 +248,27 @@ function useMockResponse(topic: string, formatAsVercelAIMessage: (content: strin
       caption: `${mockResponse.caption} #${topic.replace(/\s+/g, '')}`,
       hashtags: [...mockResponse.hashtags, topic.replace(/\s+/g, '')]
     };
+  }
+  
+  // Try to generate an image for the mock response
+  try {
+    if (mockResponse.visualPrompt) {
+      console.log('Generating image for mock response...');
+      const combinedPrompt = `${mockResponse.visualPrompt} ${mockResponse.mainContent.substring(0, 100)}`;
+      const enhancedPrompt = enhanceImagePrompt(combinedPrompt, visualStyle);
+      
+      const imageUrl = await generateImage({
+        prompt: enhancedPrompt,
+        style: visualStyle,
+      });
+      
+      if (imageUrl) {
+        console.log('Successfully generated image for mock response');
+        mockResponse.imageUrl = imageUrl;
+      }
+    }
+  } catch (error) {
+    console.error('Error generating image for mock response:', error);
   }
   
   // Convert the mock response to JSON
