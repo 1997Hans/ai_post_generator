@@ -1,5 +1,6 @@
 import { Header } from "@/components/header";
 import { PostForm } from "@/components/post-form";
+import { StarField } from "@/components/star-field";
 
 export default function Home() {
   return (
@@ -9,6 +10,7 @@ export default function Home() {
       flexDirection: "column",
       backgroundColor: "#0a081a" 
     }}>
+      <StarField />
       <Header />
       <div style={{ 
         flex: 1, 

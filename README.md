@@ -20,7 +20,7 @@ A modern, lightweight, and modular web app for generating compelling social medi
 |--------------|--------------------------------------------------|
 | Frontend     | **Next.js 15** (App Router, React 19)            |
 | UI/Styling   | **Tailwind CSS**, **Shadcn UI**, Headless UI     |
-| AI Services  | **Vercel AI SDK** (OpenAI), **Replicate** (Image/Video) |
+| AI Services  | **Vercel AI SDK** with **Google Gemini** or **OpenAI** |
 | Auth (opt)   | **Clerk** or **Supabase Auth**                   |
 | Storage      | **Supabase** (optional: Firebase)                |
 | Hosting      | **Vercel** (fully optimized for this stack)      |
@@ -55,6 +55,27 @@ A modern, lightweight, and modular web app for generating compelling social medi
 
 ---
 
+## 🤖 AI Provider Options
+
+This application supports two AI providers for text generation:
+
+### 1. Google Gemini (Recommended)
+- **Completely free** tier with generous usage limits
+- 60 requests per minute limit on free tier
+- No credit card required to get started
+- Similar quality to OpenAI for text generation
+- More cost-effective for production use
+
+### 2. OpenAI
+- Requires credit card for API access
+- $5 free credits for new accounts (expires in 3 months)
+- Pay-as-you-go pricing after free credits
+- Potential for higher costs with increased usage
+
+We recommend starting with Gemini for development and testing due to its free tier.
+
+---
+
 ## 🔧 Installation Guide (for Cursor AI IDE or Terminal)
 
 ```bash
@@ -70,8 +91,10 @@ npx tailwindcss init -p
 # In tailwind.config.ts:
 # content: ["./app/**/*.{js,ts,jsx,tsx}"]
 
-# 4. Install Vercel AI SDK and OpenAI
-npm install ai openai
+# 4. Install Vercel AI SDK and AI providers
+npm install ai @google/generative-ai --legacy-peer-deps
+# OR for OpenAI
+# npm install ai openai
 
 # 5. Install Shadcn UI components
 npx shadcn-ui@latest init
@@ -90,8 +113,15 @@ npm install @clerk/nextjs
 Create a `.env.local` file in your project root with the following variables:
 
 ```bash
-# OpenAI API (required for text generation)
-OPENAI_API_KEY=your_openai_api_key_here
+# Choose either Gemini OR OpenAI for text generation
+
+# Google Gemini API (recommended, free tier available)
+GEMINI_API_KEY=AIzaSyDWbIizsGJ-c3xI_yjF4oFSDVJ5LpOvVNg
+# Get your key at: https://ai.google.dev/
+
+# OR OpenAI API (requires payment after free credits)
+# OPENAI_API_KEY=your_openai_api_key_here
+# Get your key at: https://platform.openai.com/api-keys
 
 # Replicate API (for image generation)
 REPLICATE_API_TOKEN=your_replicate_api_token_here
@@ -105,6 +135,22 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
+## 🔑 Getting API Keys
+
+### Google Gemini API Key (Recommended)
+1. Visit [Google AI Studio](https://ai.google.dev/)
+2. Sign in with your Google account
+3. Navigate to "Get API key" in the top navigation
+4. Create a new API key (no credit card required)
+5. Copy your API key and add it to your `.env.local` file
+
+### OpenAI API Key (Alternative)
+1. Visit [OpenAI API Keys](https://platform.openai.com/api-keys)
+2. Sign up or log in to your OpenAI account
+3. Add a payment method (required for API access)
+4. Create a new API key
+5. Copy your API key and add it to your `.env.local` file
+
 ---
 
 ## 🏗️ Project Structure
@@ -113,22 +159,28 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 social-post-generator/
 ├── app/                      # Next.js App Router
 │   ├── actions/              # Server Actions
-│   │   ├── generatePost.ts   # AI post generation
+│   │   ├── generatePost.ts   # OpenAI post generation
+│   │   ├── generateGeminiPost.ts # Gemini post generation
 │   │   ├── generateImage.ts  # Image generation
 │   │   └── refinePrompt.ts   # Prompt refinement
 │   ├── api/                  # API Routes
+│   │   └── chat/             # Chat API endpoint
 │   ├── (auth)/               # Auth-protected routes
 │   │   └── dashboard/        # Admin dashboard
 │   ├── page.tsx              # Home page
 │   └── layout.tsx            # Root layout
 ├── components/               # Reusable components
 │   ├── PromptForm.tsx        # Input form for users
+│   ├── TestGeminiGenerator.tsx # Gemini test component
 │   ├── PostPreview.tsx       # Preview of generated post
 │   ├── ToneSelector.tsx      # Tone selection component
 │   └── ImagePreview.tsx      # Image preview component
 ├── lib/                      # Utility functions
-│   ├── ai.ts                 # AI configuration
+│   ├── openai.ts             # OpenAI configuration
+│   ├── gemini.ts             # Gemini configuration
 │   ├── types.ts              # TypeScript types
+│   ├── prompts.ts            # AI prompt templates
+│   ├── error-handler.ts      # Error handling utilities
 │   └── utils.ts              # Helper functions
 ├── ui/                       # Shadcn UI components
 │   ├── button.tsx
@@ -155,7 +207,7 @@ The main user flow for generating AI posts:
    - Optional tone selection
    - Visual style preferences
 
-2. **AI Processing** (`app/actions/generatePost.ts`)
+2. **AI Processing** (`app/actions/generateGeminiPost.ts` or `generatePost.ts`)
    - Server action processes the user input
    - Uses Vercel AI SDK to refine and expand the prompt
    - Generates post content, caption, and hashtags
@@ -207,15 +259,25 @@ Common issues and solutions:
 
 ### 1. API Key Issues
 
-**Problem**: "OpenAI API key not configured" error.
-**Solution**: Double-check your `.env.local` file and ensure the OPENAI_API_KEY is correctly set up.
+**Problem**: "API key not configured" error.
+**Solution**: Double-check your `.env.local` file and ensure the correct API key (GEMINI_API_KEY or OPENAI_API_KEY) is set up.
 
-### 2. Image Generation Errors
+### 2. Gemini API Errors
+
+**Problem**: "Failed to fetch" errors with Gemini API.
+**Solution**: Ensure you're using the correct API key and that you haven't exceeded the rate limits (60 requests/minute).
+
+### 3. OpenAI API Errors
+
+**Problem**: Authentication errors with OpenAI.
+**Solution**: Verify your account has a valid payment method and your API key is correct.
+
+### 4. Image Generation Errors
 
 **Problem**: Images not generating or errors in the console.
 **Solution**: Verify your Replicate API token and check network requests for specific error messages.
 
-### 3. Server Actions Not Working
+### 5. Server Actions Not Working
 
 **Problem**: Server actions returning errors or not processing.
 **Solution**: Make sure your Next.js version supports server actions and that you're using the "use server" directive correctly.
@@ -244,7 +306,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Next.js](https://nextjs.org/) for the incredible React framework
 - [Vercel AI SDK](https://sdk.vercel.ai/docs) for AI integration
+- [Google Gemini](https://ai.google.dev/) for free AI text generation
+- [OpenAI](https://openai.com/) for GPT models
 - [Tailwind CSS](https://tailwindcss.com/) for styling
 - [Shadcn UI](https://ui.shadcn.com/) for beautiful UI components
-- [OpenAI](https://openai.com/) for the powerful language model
 - [Replicate](https://replicate.com/) for image generation capabilities

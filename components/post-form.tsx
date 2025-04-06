@@ -2,25 +2,32 @@
 
 import { useState } from "react"
 import { SparklesIcon } from "lucide-react"
+import { useChat } from "ai/react"
 
 export function PostForm() {
   const [activeTab, setActiveTab] = useState("create")
-  const [isGenerating, setIsGenerating] = useState(false)
   const [prompt, setPrompt] = useState("")
   const [platform, setPlatform] = useState("instagram")
   const [tone, setTone] = useState("professional")
 
-  const handleSubmit = (e) => {
+  const { messages, isLoading, handleSubmit: handleChatSubmit } = useChat({
+    api: '/api/chat',
+    body: {
+      topic: prompt,
+      tone,
+      platform
+    },
+    onResponse: (response) => {
+      console.log('Response received', response)
+      setActiveTab("preview")
+    },
+  })
+
+  const handleFormSubmit = (e) => {
     e.preventDefault()
     if (!prompt.trim()) return
     
-    setIsGenerating(true)
-    
-    // Simulate generating content
-    setTimeout(() => {
-      setActiveTab("preview")
-      setIsGenerating(false)
-    }, 2000)
+    handleChatSubmit(e)
   }
 
   return (
@@ -99,7 +106,7 @@ export function PostForm() {
       {/* Create Form */}
       {activeTab === "create" && (
         <div style={{ padding: "24px", position: "relative", zIndex: 1 }}>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleFormSubmit}>
             <div style={{ marginBottom: "24px" }}>
               <label 
                 htmlFor="prompt" 
@@ -248,26 +255,28 @@ export function PostForm() {
                 />
                 <button
                   type="submit"
-                  disabled={isGenerating || !prompt.trim()}
+                  disabled={isLoading || !prompt.trim()}
                   style={{
-                    position: "relative",
-                    zIndex: 10,
-                    padding: "16px 32px",
-                    borderRadius: "9999px",
-                    border: "none",
-                    color: "white",
-                    fontSize: "18px",
-                    fontWeight: "500",
-                    cursor: !prompt.trim() || isGenerating ? "not-allowed" : "pointer",
                     display: "flex",
                     alignItems: "center",
+                    justifyContent: "center",
                     gap: "8px",
-                    background: "linear-gradient(90deg, #ea4c89 0%, #8f4bde 50%, #4668ea 100%)",
-                    opacity: !prompt.trim() || isGenerating ? 0.7 : 1,
+                    padding: "16px 32px",
+                    borderRadius: "9999px",
+                    backgroundColor: "rgba(143, 75, 222, 0.15)",
+                    border: "1px solid rgba(143, 75, 222, 0.3)",
+                    color: "white",
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    cursor: !prompt.trim() ? "not-allowed" : "pointer",
+                    position: "relative",
+                    overflow: "hidden",
+                    transition: "all 0.2s ease",
+                    opacity: !prompt.trim() ? 0.7 : 1,
                   }}
                 >
-                  <SparklesIcon style={{ width: "20px", height: "20px" }} />
-                  {isGenerating ? "Generating..." : "Generate Post"}
+                  <SparklesIcon size={20} />
+                  {isLoading ? "Generating..." : "Generate Post"}
                 </button>
               </div>
             </div>
@@ -275,104 +284,73 @@ export function PostForm() {
         </div>
       )}
       
-      {/* Preview Content */}
+      {/* Preview Tab */}
       {activeTab === "preview" && (
-        <div style={{ padding: "24px", position: "relative", zIndex: 1 }}>
-          <div style={{ marginBottom: "24px" }}>
-            <h3 style={{
-              fontSize: "18px",
-              fontWeight: "600",
-              marginBottom: "8px",
-              color: "transparent",
-              backgroundImage: "linear-gradient(to right, #ea4c89, #8f4bde, #4668ea)",
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-            }}>
-              Caption
-            </h3>
-            <p style={{ fontSize: "16px", color: "white", lineHeight: 1.6 }}>
-              Generated post about "{prompt}" for {platform} with a {tone} tone. This is a placeholder for the actual AI-generated content that would come from OpenAI or another model.
-            </p>
-          </div>
-          
-          <div style={{ marginBottom: "24px" }}>
-            <h3 style={{
-              fontSize: "16px",
-              fontWeight: "600",
-              marginBottom: "8px",
-              color: "transparent",
-              backgroundImage: "linear-gradient(to right, #ea4c89, #8f4bde, #4668ea)",
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-            }}>
-              Hashtags
-            </h3>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {["#AI", "#SocialMedia", "#ContentCreation"].map((tag) => (
-                <span 
-                  key={tag}
+        <div style={{ padding: "24px", color: "white", position: "relative", zIndex: 1 }}>
+          {messages.length > 1 ? (
+            <div>
+              <pre style={{ 
+                whiteSpace: "pre-wrap",
+                fontSize: "15px",
+                fontFamily: "inherit",
+                backgroundColor: "rgba(31, 25, 56, 0.4)",
+                padding: "16px",
+                borderRadius: "8px",
+                maxHeight: "400px",
+                overflow: "auto"
+              }}>
+                {messages[messages.length - 1].content}
+              </pre>
+              
+              <div style={{ 
+                display: "flex", 
+                justifyContent: "center", 
+                marginTop: "24px", 
+                gap: "16px" 
+              }}>
+                <button
+                  onClick={() => setActiveTab("create")}
                   style={{
-                    padding: "4px 10px",
-                    borderRadius: "9999px",
-                    fontSize: "14px",
-                    backgroundColor: "rgba(22, 18, 50, 0.4)",
-                    border: "1px solid rgba(91, 77, 168, 0.2)",
-                    color: "rgba(255, 255, 255, 0.9)"
+                    padding: "12px 24px",
+                    borderRadius: "6px",
+                    backgroundColor: "rgba(31, 25, 56, 0.4)",
+                    border: "1px solid rgba(91, 77, 168, 0.3)",
+                    color: "#a7a3bc",
+                    cursor: "pointer"
                   }}
                 >
-                  {tag}
-                </span>
-              ))}
+                  Edit Prompt
+                </button>
+                
+                <button
+                  style={{
+                    padding: "12px 24px",
+                    borderRadius: "6px",
+                    backgroundColor: "rgba(143, 75, 222, 0.15)",
+                    border: "1px solid rgba(143, 75, 222, 0.3)",
+                    color: "white",
+                    cursor: "pointer"
+                  }}
+                >
+                  Copy Content
+                </button>
+              </div>
             </div>
-          </div>
-          
-          <div style={{ 
-            display: "flex", 
-            justifyContent: "space-between",
-            borderTop: "1px solid rgba(91, 77, 168, 0.2)",
-            paddingTop: "24px"
-          }}>
-            <button
-              onClick={() => setActiveTab("create")}
-              style={{
-                padding: "8px 16px",
-                borderRadius: "8px",
-                backgroundColor: "rgba(22, 18, 50, 0.4)",
-                border: "1px solid rgba(91, 77, 168, 0.2)",
-                color: "white",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px"
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 4.5L8 12L15 19.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Edit
-            </button>
-            
-            <button
-              style={{
-                padding: "8px 24px",
-                borderRadius: "8px",
-                background: "linear-gradient(90deg, #ea4c89 0%, #8f4bde 50%, #4668ea 100%)",
-                border: "none",
-                color: "white",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px"
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 6L9 17L4 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Approve
-            </button>
-          </div>
+          ) : (
+            <div style={{ 
+              textAlign: "center", 
+              padding: "40px", 
+              color: "#a7a3bc" 
+            }}>
+              {isLoading ? (
+                <p>Generating your post...</p>
+              ) : (
+                <p>Generate a post to see the preview.</p>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
-  )
+  );
 } 
