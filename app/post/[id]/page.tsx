@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Edit } from 'lucide-react';
 import { Post } from '@/lib/types';
-import { getPostById } from '@/lib/storage';
 import { PostPreview } from '@/components/PostPreview';
 import { FeedbackForm } from '@/components/feedback/FeedbackForm';
 import { ExportOptions } from '@/components/export/ExportOptions';
+import { getPost } from '@/app/actions/db-actions';
 
 export default function PostPage({ params }: { params: { id: string } }) {
   const [post, setPost] = useState<Post | null>(null);
@@ -17,13 +17,33 @@ export default function PostPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   
   useEffect(() => {
-    const fetchPost = () => {
+    const fetchPost = async () => {
       try {
-        const foundPost = getPostById(params.id);
-        if (foundPost) {
-          setPost(foundPost);
+        setIsLoading(true);
+        console.log('Fetching post with ID:', params.id);
+        
+        const response = await getPost(params.id);
+        
+        if (response.success && response.post) {
+          console.log('Post found:', response.post);
+          
+          // Normalize the post data to ensure all fields are properly formatted
+          const normalizedPost: Post = {
+            id: response.post.id,
+            content: response.post.content || '',
+            prompt: response.post.prompt || 'Untitled Post',
+            hashtags: Array.isArray(response.post.hashtags) ? response.post.hashtags : [],
+            imageUrl: response.post.image_url || '',
+            refinedPrompt: response.post.refined_prompt || null,
+            tone: response.post.tone || '',
+            visualStyle: response.post.visual_style || '',
+            createdAt: response.post.created_at || new Date().toISOString(),
+            updatedAt: response.post.updated_at || new Date().toISOString()
+          };
+          
+          setPost(normalizedPost);
         } else {
-          setError('Post not found. It may have been deleted or never existed.');
+          setError(response.error || 'Post not found. It may have been deleted or never existed.');
         }
       } catch (err) {
         setError('Error loading post data. Please try again later.');
@@ -33,9 +53,7 @@ export default function PostPage({ params }: { params: { id: string } }) {
       }
     };
     
-    // Small delay to ensure localStorage has the latest data
-    const timer = setTimeout(fetchPost, 100);
-    return () => clearTimeout(timer);
+    fetchPost();
   }, [params.id]);
   
   const handleFeedbackSubmitted = () => {

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Post } from '@/lib/types';
-import { getPostById, savePost } from '@/lib/storage';
+import { getPost, savePost } from '@/app/actions/db-actions';
 import { EditPostForm } from '@/components/history/EditPostForm';
 import { PostPreview } from '@/components/PostPreview';
 import Link from 'next/link';
@@ -13,16 +13,37 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
   const [post, setPost] = useState<Post | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
   
   useEffect(() => {
-    const fetchPost = () => {
+    const fetchPost = async () => {
       try {
-        const foundPost = getPostById(params.id);
-        if (foundPost) {
-          setPost(foundPost);
+        setIsLoading(true);
+        console.log('Fetching post with ID:', params.id);
+        
+        const response = await getPost(params.id);
+        
+        if (response.success && response.post) {
+          console.log('Post found:', response.post);
+          
+          // Normalize the post data to ensure all fields are properly formatted
+          const normalizedPost: Post = {
+            id: response.post.id,
+            content: response.post.content || '',
+            prompt: response.post.prompt || 'Untitled Post',
+            hashtags: Array.isArray(response.post.hashtags) ? response.post.hashtags : [],
+            imageUrl: response.post.image_url || '',
+            refinedPrompt: response.post.refined_prompt || null,
+            tone: response.post.tone || '',
+            visualStyle: response.post.visual_style || '',
+            createdAt: response.post.created_at || new Date().toISOString(),
+            updatedAt: response.post.updated_at || new Date().toISOString()
+          };
+          
+          setPost(normalizedPost);
         } else {
-          setError('Post not found. It may have been deleted or never existed.');
+          setError(response.error || 'Post not found. It may have been deleted or never existed.');
         }
       } catch (err) {
         setError('Error loading post data. Please try again later.');
@@ -32,19 +53,43 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
       }
     };
     
-    // Small delay to ensure localStorage has the latest data
-    const timer = setTimeout(fetchPost, 100);
-    return () => clearTimeout(timer);
+    fetchPost();
   }, [params.id]);
   
-  const handleUpdatePost = (updatedPost: Post) => {
+  const handleUpdatePost = async (updatedPost: Post) => {
     try {
-      savePost(updatedPost);
+      setIsSaving(true);
+      console.log('Updating post in database:', updatedPost);
+      
+      // Create the database-compatible object
+      const postData = {
+        postId: updatedPost.id,
+        content: updatedPost.content,
+        imageUrl: updatedPost.imageUrl || '',
+        hashtags: Array.isArray(updatedPost.hashtags) ? updatedPost.hashtags : [],
+        prompt: updatedPost.prompt || 'Untitled Post',
+        refinedPrompt: updatedPost.refinedPrompt || null,
+        tone: updatedPost.tone || '',
+        visualStyle: updatedPost.visualStyle || ''
+      };
+      
+      // Save to database
+      const result = await savePost(postData);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Unknown error occurred while saving post');
+      }
+      
+      console.log('Post updated successfully in database:', result.postId);
       setPost(updatedPost);
-      // Create a custom event to notify other components
-      window.dispatchEvent(new Event('postUpdated'));
+      
+      // Redirect to view page
+      router.push(`/post/${updatedPost.id}`);
     } catch (error) {
       console.error('Error saving post update:', error);
+      alert('Failed to update post: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsSaving(false);
     }
   };
   
@@ -90,7 +135,11 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-6">
-          <EditPostForm post={post} onUpdate={handleUpdatePost} />
+          <EditPostForm 
+            post={post} 
+            onUpdate={handleUpdatePost} 
+            isSaving={isSaving} 
+          />
         </div>
         
         <div className="lg:sticky lg:top-20">

@@ -7,9 +7,10 @@ import { Loader2, RefreshCw, Save } from 'lucide-react';
 interface EditPostFormProps {
   post: Post;
   onUpdate: (updatedPost: Post) => void;
+  isSaving?: boolean;
 }
 
-export function EditPostForm({ post, onUpdate }: EditPostFormProps) {
+export function EditPostForm({ post, onUpdate, isSaving = false }: EditPostFormProps) {
   const [formData, setFormData] = useState({
     prompt: post.prompt,
     content: post.content,
@@ -31,7 +32,11 @@ export function EditPostForm({ post, onUpdate }: EditPostFormProps) {
   
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    
+    // Don't set local isSubmitting if parent is handling the saving state
+    if (!isSaving) {
+      setIsSubmitting(true);
+    }
     
     try {
       const updatedPost: Post = {
@@ -46,10 +51,16 @@ export function EditPostForm({ post, onUpdate }: EditPostFormProps) {
       };
       
       onUpdate(updatedPost);
-      setIsSubmitting(false);
+      
+      // Only reset local state if parent is not handling saving
+      if (!isSaving) {
+        setIsSubmitting(false);
+      }
     } catch (error) {
       console.error('Error updating post:', error);
-      setIsSubmitting(false);
+      if (!isSaving) {
+        setIsSubmitting(false);
+      }
     }
   };
   
@@ -79,6 +90,9 @@ export function EditPostForm({ post, onUpdate }: EditPostFormProps) {
     }, 2000);
   };
   
+  // Determine if the save button should be disabled
+  const saveButtonDisabled = isSaving || isSubmitting;
+  
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
@@ -93,6 +107,7 @@ export function EditPostForm({ post, onUpdate }: EditPostFormProps) {
           onChange={handleChange}
           className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
           required
+          disabled={isSaving}
         />
       </div>
       
@@ -107,6 +122,7 @@ export function EditPostForm({ post, onUpdate }: EditPostFormProps) {
             value={formData.tone}
             onChange={handleChange}
             className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+            disabled={isSaving}
           >
             <option value="">Select a tone</option>
             <option value="professional">Professional</option>
@@ -127,6 +143,7 @@ export function EditPostForm({ post, onUpdate }: EditPostFormProps) {
             value={formData.visualStyle}
             onChange={handleChange}
             className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+            disabled={isSaving}
           >
             <option value="">Select a style</option>
             <option value="realistic">Realistic</option>
@@ -150,6 +167,7 @@ export function EditPostForm({ post, onUpdate }: EditPostFormProps) {
           rows={5}
           className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
           required
+          disabled={isSaving}
         />
       </div>
       
@@ -164,6 +182,7 @@ export function EditPostForm({ post, onUpdate }: EditPostFormProps) {
           onChange={handleChange}
           rows={3}
           className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+          disabled={isSaving}
         />
       </div>
       
@@ -178,27 +197,28 @@ export function EditPostForm({ post, onUpdate }: EditPostFormProps) {
           value={formData.hashtags}
           onChange={handleChange}
           className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+          disabled={isSaving}
         />
       </div>
       
       <div className="flex gap-4 pt-2">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={saveButtonDisabled}
           className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
-          {isSubmitting ? (
+          {isSaving || isSubmitting ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Save className="h-4 w-4" />
           )}
-          Save Changes
+          {isSaving ? 'Saving...' : 'Save Changes'}
         </button>
         
         <button
           type="button"
           onClick={handleRegenerate}
-          disabled={isRegenerating}
+          disabled={isRegenerating || isSaving}
           className="flex items-center gap-2 rounded-md border border-input bg-background px-4 py-2 hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
         >
           {isRegenerating ? (

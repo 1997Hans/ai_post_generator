@@ -201,4 +201,35 @@ export async function deletePost(postId: string) {
       error: error instanceof Error ? error.message : 'Unknown error occurred' 
     }
   }
+}
+
+export async function saveFeedback(postId: string, rating: number, comment: string = '') {
+  try {
+    const feedbackId = uuidv4()
+    const timestamp = new Date().toISOString()
+    
+    // Add feedback to database
+    const { error } = await supabase
+      .from('feedback')
+      .insert({
+        id: feedbackId,
+        post_id: postId,
+        rating: rating,
+        feedback_text: comment,
+        created_at: timestamp
+      })
+    
+    if (error) throw new Error(error.message)
+    
+    revalidatePath('/post/[id]')
+    revalidatePath('/dashboard')
+    
+    return { success: true, feedbackId }
+  } catch (error) {
+    console.error('Error saving feedback:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    }
+  }
 } 

@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { Loader2, Send, Star } from 'lucide-react';
-import { saveFeedback } from '@/lib/storage';
+import { saveFeedback } from '@/app/actions/db-actions';
 
 interface FeedbackFormProps {
   postId: string;
@@ -14,17 +14,26 @@ export function FeedbackForm({ postId, onFeedbackSubmitted }: FeedbackFormProps)
   const [comment, setComment] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
     
     try {
-      saveFeedback(postId, rating, comment);
-      setIsSubmitted(true);
-      onFeedbackSubmitted?.();
+      // Save feedback to database
+      const result = await saveFeedback(postId, rating, comment);
+      
+      if (result.success) {
+        setIsSubmitted(true);
+        onFeedbackSubmitted?.();
+      } else {
+        setError(result.error || 'Failed to submit feedback. Please try again.');
+      }
     } catch (error) {
       console.error('Error saving feedback:', error);
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -79,6 +88,12 @@ export function FeedbackForm({ postId, onFeedbackSubmitted }: FeedbackFormProps)
           placeholder="Share your thoughts about this post..."
         />
       </div>
+      
+      {error && (
+        <div className="p-3 text-sm bg-red-50 text-red-500 rounded-md">
+          {error}
+        </div>
+      )}
       
       <button
         type="submit"
