@@ -90,7 +90,7 @@ export interface Post {
   visualStyle?: string;
   createdAt: string;
   updatedAt: string;
-  approved?: boolean | null;
+  approved: boolean | null;
 }
 
 export interface PostHistory {

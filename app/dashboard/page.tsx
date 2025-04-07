@@ -22,6 +22,45 @@ export default function DashboardPage() {
     setLastRefresh(new Date());
   };
   
+  // Add a direct refresh method that bypasses all caches
+  const forceRefreshData = async () => {
+    try {
+      console.log('Force refreshing data with no cache...');
+      setIsLoading(true);
+      
+      // Add a unique timestamp to completely avoid any caching
+      const timestamp = Date.now();
+      const response = await fetch(`/api/posts?nocache=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+        next: { revalidate: 0 }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const posts = await response.json();
+      console.log(`Force-loaded ${posts.length} posts from database:`, posts);
+      
+      // Log each post's approval status for debugging
+      posts.forEach(post => {
+        console.log(`[Dashboard] Post ${post.id}: approved=${post.approved}, Type: ${typeof post.approved}`);
+      });
+      
+      setDbPosts(posts);
+      setLastRefresh(new Date());
+    } catch (error) {
+      console.error('Failed to force-refresh posts:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   // Fetch posts from database with direct fetch to bypass cache
   useEffect(() => {
     async function loadPostsFromDb() {
@@ -65,17 +104,7 @@ export default function DashboardPage() {
     }
     
     loadPostsFromDb();
-  }, [refreshTrigger]); // Add refreshTrigger as a dependency
-  
-  // Setup interval to periodically check for updates
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      console.log('Auto-refreshing posts data...');
-      refreshData();
-    }, 30000); // Refresh every 30 seconds
-    
-    return () => clearInterval(intervalId);
-  }, []);
+  }, [refreshTrigger]); // Only refresh when manually triggered
   
   return (
     <div style={{ 
@@ -124,7 +153,28 @@ export default function DashboardPage() {
             <RefreshCw size={14} 
               className={isLoading ? "animate-spin" : ""} 
             />
-            {isLoading ? "Refreshing..." : "Refresh"}
+            {isLoading ? "Refreshing..." : "Manual Refresh"}
+          </button>
+          
+          <button 
+            onClick={forceRefreshData}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              backgroundColor: "rgba(239, 68, 68, 0.1)",
+              color: "#ef4444",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "14px"
+            }}
+          >
+            <RefreshCw size={14} 
+              className={isLoading ? "animate-spin" : ""} 
+            />
+            Force Refresh
           </button>
           
           <ApprovalHelpTooltip />
@@ -154,11 +204,14 @@ export default function DashboardPage() {
       <div style={{
         display: "flex",
         justifyContent: "flex-end",
+        alignItems: "center",
         fontSize: "12px",
         color: "#a7a3bc",
-        marginBottom: "8px"
+        marginBottom: "8px",
+        gap: "8px"
       }}>
-        Last refreshed: {lastRefresh.toLocaleTimeString()}
+        <span>Last data loaded: {lastRefresh.toLocaleTimeString()}</span>
+        <span style={{ color: "#7c3aed", cursor: "help" }} title="Posts are only loaded once when you open the page. Use the refresh buttons to manually check for updates.">ⓘ</span>
       </div>
       
       {/* Social Media Manager Instructions */}
@@ -180,6 +233,8 @@ export default function DashboardPage() {
           <p style={{ fontSize: "14px", color: "#a7a3bc", lineHeight: "1.6" }}>
             You can now approve or reject posts directly from this dashboard! Each post card below has <span style={{ color: "#4ade80" }}>Approve</span> and <span style={{ color: "#ef4444" }}>Reject</span> buttons to quickly review content. 
             Click the eye icon on any post to view details and provide feedback when rejecting content.
+            <br/><br/>
+            <strong style={{ color: "#7c3aed" }}>Note:</strong> Changes are saved immediately, but the dashboard won't automatically refresh. Use the "Manual Refresh" button to see updates from other team members.
           </p>
         </div>
       </div>

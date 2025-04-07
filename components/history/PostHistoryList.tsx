@@ -45,23 +45,42 @@ export function PostHistoryList({
         // DB field mapping - ensure all fields exist with proper format
         const localState = localPostStates[post.id];
         
-        // If we have a local state for this post, use it, otherwise use the database value
-        const approved = localState ? localState.approved : post.approved === true;
+        // Debug database value
+        console.log(`[PostHistoryList] Raw DB value for post ${post.id}: approved=${JSON.stringify(post.approved)}`);
         
-        console.log(`[PostHistoryList] Post ${post.id}: DB approved=${post.approved}, local=${localState?.approved}, final=${approved}`);
+        // If we have a local state for this post, use it, otherwise use the database value
+        // IMPORTANT: The === true comparison was causing problems with truthy values
+        // Using a direct check instead
+        let approvalState: boolean | null;
+        
+        if (localState !== undefined) {
+          // Use local state if available
+          approvalState = localState.approved;
+        } else if (post.approved === true) {
+          // Explicitly approved
+          approvalState = true;
+        } else if (post.approved === false) {
+          // Explicitly rejected
+          approvalState = false;
+        } else {
+          // Null or undefined = pending
+          approvalState = null;
+        }
+        
+        console.log(`[PostHistoryList] Post ${post.id}: DB approved=${post.approved}, local=${localState?.approved}, final=${approvalState}`);
         
         return {
           id: post.id || uuidv4(),
           content: post.content || '',
           prompt: post.prompt || 'Untitled Post',
-          hashtags: Array.isArray(post.hashtags) ? post.hashtags : [],
+          hashtags: Array.isArray(post.hashtags) ? post.hashtags : (post.hashtags ? post.hashtags.split(' ') : []),
           imageUrl: post.image_url || post.imageUrl || '',
           refinedPrompt: post.refined_prompt || post.refinedPrompt || null,
           tone: post.tone || '',
           visualStyle: post.visual_style || post.visualStyle || '',
           createdAt: post.created_at || post.createdAt || timestamp,
           updatedAt: post.updated_at || post.updatedAt || timestamp,
-          approved: approved
+          approved: approvalState
         } as Post;
       });
       
@@ -114,10 +133,21 @@ export function PostHistoryList({
       if (result.success) {
         console.log(`[PostHistoryList] Post ${id} approved successfully`);
         
-        // Call onStatusChange to refresh parent component
-        if (onStatusChange) {
-          onStatusChange();
-        }
+        // Instead of refreshing parent component, update local data only
+        // Update our local normalized posts to reflect the change
+        setNormalizedDbPosts(prevPosts => 
+          prevPosts.map(post => 
+            post.id === id 
+              ? { ...post, approved: true } 
+              : post
+          )
+        );
+        
+        // Only call onStatusChange if explicitly requested by the user
+        // through a manual refresh button click
+        // if (onStatusChange) {
+        //   onStatusChange();
+        // }
       } else {
         console.error(`[PostHistoryList] Failed to approve post ${id}`);
         // Revert local state on failure
@@ -163,10 +193,21 @@ export function PostHistoryList({
       if (result.success) {
         console.log(`[PostHistoryList] Post ${id} rejected successfully`);
         
-        // Call onStatusChange to refresh parent component
-        if (onStatusChange) {
-          onStatusChange();
-        }
+        // Instead of refreshing parent component, update local data only
+        // Update our local normalized posts to reflect the change
+        setNormalizedDbPosts(prevPosts => 
+          prevPosts.map(post => 
+            post.id === id 
+              ? { ...post, approved: false } 
+              : post
+          )
+        );
+        
+        // Only call onStatusChange if explicitly requested by the user
+        // through a manual refresh button click
+        // if (onStatusChange) {
+        //   onStatusChange();
+        // }
       } else {
         console.error(`[PostHistoryList] Failed to reject post ${id}`);
         // Revert local state on failure
@@ -296,7 +337,12 @@ export function PostHistoryList({
         </div>
         
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => {
+            // Call parent refresh function if provided
+            if (onStatusChange) {
+              onStatusChange();
+            }
+          }}
           style={{
             display: "flex",
             alignItems: "center",
@@ -307,9 +353,10 @@ export function PostHistoryList({
             fontSize: "14px",
             cursor: "pointer",
           }}
+          title="Get latest data from database"
         >
-          <RefreshCw size={14} />
-          Refresh
+          <RefreshCw size={14} className={isDbLoading ? "animate-spin" : ""} />
+          {isDbLoading ? "Loading..." : "Manual Refresh"}
         </button>
       </div>
       
