@@ -1,7 +1,7 @@
 [build]
-  # Skip build process and just publish static files
-  command = "echo 'Skipping build step, publishing static index.html'"
-  publish = "."
+  # Use legacy-peer-deps to bypass dependency conflicts
+  command = "npm install --legacy-peer-deps && npm run build"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "20.11.0"
