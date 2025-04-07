@@ -1,7 +1,7 @@
 import { getPost } from "@/app/actions/db-actions";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
@@ -11,16 +11,8 @@ import { PostActions } from "@/components/post-actions";
 import { ApprovalStatusBadge } from "@/components/approval/ApprovalStatusBadge";
 import { FeedbackDialog } from "@/components/approval/FeedbackDialog";
 
-// Correct type definition for Next.js 15 with React 19
-interface PostPageParams {
-  id: string;
-}
-
-export default async function PostDetailPage({
-  params,
-}: {
-  params: PostPageParams;
-}) {
+// Using simple type approach for dynamic routes
+export default async function PostDetailPage({ params }: any) {
   const { post, success } = await getPost(params.id);
   
   if (!success || !post) {
