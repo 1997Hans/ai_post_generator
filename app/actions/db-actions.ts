@@ -11,6 +11,7 @@ import { Post } from '@/lib/types'
 export async function savePost(data: SavePostValues) {
   try {
     const postId = data.postId || uuidv4()
+    const timestamp = new Date().toISOString()
     
     const { error } = await supabase.from('posts').upsert({
       id: postId,
@@ -21,7 +22,8 @@ export async function savePost(data: SavePostValues) {
       refined_prompt: data.refinedPrompt || null,
       tone: data.tone,
       visual_style: data.visualStyle,
-      updated_at: new Date().toISOString(),
+      updated_at: timestamp,
+      created_at: timestamp,
       approved: false
     })
 

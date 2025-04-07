@@ -11,7 +11,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative z-10">
+    <div className="min-h-[calc(100vh-64px)] bg-background">
+      <StarField />
       {children}
     </div>
   );

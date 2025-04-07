@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { savePost } from '@/lib/storage';
+import { savePost, debugStorage } from '@/lib/storage';
 import { Post, PostOutput, PostRequestInput } from '@/lib/types';
 import { PostPreview } from './PostPreview';
 import { ExportOptions } from './export/ExportOptions';
@@ -26,6 +26,7 @@ export function PostGenerationResult({
   const [post, setPost] = useState<Post | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const router = useRouter();
   
   useEffect(() => {
@@ -51,12 +52,16 @@ export function PostGenerationResult({
   const handleSavePost = () => {
     if (!post) {
       console.error('Cannot save: post is null');
+      setSaveError('Cannot save: post data is missing');
       return;
     }
     
     setIsSaving(true);
+    setSaveError(null);
+    
     try {
       console.log('Saving post to localStorage:', post);
+      
       // Make sure we have a proper post object with all required fields
       const completePost: Post = {
         ...post,
@@ -70,14 +75,29 @@ export function PostGenerationResult({
       
       // Save to localStorage
       savePost(completePost);
-      setIsSaved(true);
       
-      // Wait a moment before redirecting
+      // Create a custom event to notify other components
+      const customEvent = new CustomEvent('postUpdated', { 
+        detail: { postId: completePost.id, action: 'save' } 
+      });
+      window.dispatchEvent(customEvent);
+      
+      // Verify the save was successful
       setTimeout(() => {
-        router.push(`/post/${completePost.id}`);
-      }, 1500);
+        // Debug localStorage to check current state
+        debugStorage();
+        
+        setIsSaved(true);
+        setIsSaving(false);
+        
+        // Wait a moment before redirecting
+        setTimeout(() => {
+          router.push(`/post/${completePost.id}`);
+        }, 1000);
+      }, 500);
     } catch (error) {
       console.error('Error saving post:', error);
+      setSaveError('Failed to save post. Please try again.');
       setIsSaving(false);
     }
   };
@@ -124,6 +144,12 @@ export function PostGenerationResult({
             )}
             Regenerate
           </button>
+          
+          {saveError && (
+            <div className="text-sm text-red-500">
+              {saveError}
+            </div>
+          )}
           
           {isSaved && (
             <div className="text-sm text-muted-foreground">
