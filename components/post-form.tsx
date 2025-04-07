@@ -253,18 +253,29 @@ export function PostForm() {
       
       {/* Create Tab */}
       {activeTab === "create" && (
-        <div>
-          <form onSubmit={handleFormSubmit}>
-            <div style={{ marginBottom: "24px" }}>
+        <div style={{ maxWidth: "100%" }}>
+          <form 
+            onSubmit={handleFormSubmit}
+            style={{
+              width: "100%",
+              maxWidth: "800px",
+              margin: "0 auto",
+              padding: "0",
+              display: "flex",
+              flexDirection: "column",
+              gap: "32px"
+            }}
+          >
+            <div style={{ width: "100%" }}>
               <h2 style={{ 
                 fontSize: "18px", 
                 fontWeight: "600", 
-                marginBottom: "8px",
+                marginBottom: "12px",
                 color: "#d8d4ea"
               }}>
                 What would you like to post about?
               </h2>
-              <div style={{ position: "relative" }}>
+              <div style={{ position: "relative", width: "100%" }}>
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
@@ -279,28 +290,29 @@ export function PostForm() {
                     fontSize: "16px",
                     minHeight: "120px",
                     resize: "none",
-                    fontFamily: "inherit"
+                    fontFamily: "inherit",
+                    boxSizing: "border-box"
                   }}
                 />
               </div>
             </div>
 
             <div style={{ 
-              display: "flex", 
-              gap: "24px", 
-              marginBottom: "32px",
-              flexWrap: "wrap"
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: "24px",
+              width: "100%"
             }}>
-              <div style={{ flex: 1, minWidth: "200px" }}>
+              <div>
                 <h2 style={{ 
                   fontSize: "16px", 
                   fontWeight: "600", 
-                  marginBottom: "8px",
+                  marginBottom: "12px",
                   color: "#d8d4ea"
                 }}>
                   Platform
                 </h2>
-                <div style={{ position: "relative" }}>
+                <div style={{ position: "relative", width: "100%" }}>
                   <select
                     value={platform}
                     onChange={(e) => setPlatform(e.target.value)}
@@ -312,7 +324,14 @@ export function PostForm() {
                       border: "1px solid rgba(91, 77, 168, 0.2)",
                       color: "white",
                       fontSize: "16px",
-                      appearance: "none"
+                      appearance: "none",
+                      WebkitAppearance: "none",
+                      MozAppearance: "none",
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%238f4bde' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 16px center",
+                      fontFamily: "inherit",
+                      boxSizing: "border-box"
                     }}
                   >
                     <option value="facebook">Facebook</option>
@@ -320,28 +339,19 @@ export function PostForm() {
                     <option value="twitter">Twitter</option>
                     <option value="linkedin">LinkedIn</option>
                   </select>
-                  <div style={{ 
-                    position: "absolute", 
-                    right: "16px", 
-                    top: "50%", 
-                    transform: "translateY(-50%)",
-                    pointerEvents: "none"
-                  }}>
-                    ▼
-                  </div>
                 </div>
               </div>
 
-              <div style={{ flex: 1, minWidth: "200px" }}>
+              <div>
                 <h2 style={{ 
                   fontSize: "16px", 
                   fontWeight: "600", 
-                  marginBottom: "8px",
+                  marginBottom: "12px",
                   color: "#d8d4ea"
                 }}>
                   Tone
                 </h2>
-                <div style={{ position: "relative" }}>
+                <div style={{ position: "relative", width: "100%" }}>
                   <select
                     value={tone}
                     onChange={(e) => setTone(e.target.value)}
@@ -353,7 +363,14 @@ export function PostForm() {
                       border: "1px solid rgba(91, 77, 168, 0.2)",
                       color: "white",
                       fontSize: "16px",
-                      appearance: "none"
+                      appearance: "none",
+                      WebkitAppearance: "none",
+                      MozAppearance: "none",
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%238f4bde' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 16px center",
+                      fontFamily: "inherit",
+                      boxSizing: "border-box"
                     }}
                   >
                     <option value="friendly">Friendly</option>
@@ -362,28 +379,19 @@ export function PostForm() {
                     <option value="enthusiastic">Enthusiastic</option>
                     <option value="informative">Informative</option>
                   </select>
-                  <div style={{ 
-                    position: "absolute", 
-                    right: "16px", 
-                    top: "50%", 
-                    transform: "translateY(-50%)",
-                    pointerEvents: "none"
-                  }}>
-                    ▼
-                  </div>
                 </div>
               </div>
 
-              <div style={{ flex: 1, minWidth: "200px" }}>
+              <div>
                 <h2 style={{ 
                   fontSize: "16px", 
                   fontWeight: "600", 
-                  marginBottom: "8px",
+                  marginBottom: "12px",
                   color: "#d8d4ea"
                 }}>
                   Visual Style
                 </h2>
-                <div style={{ position: "relative" }}>
+                <div style={{ position: "relative", width: "100%" }}>
                   <select
                     value={visualStyle}
                     onChange={(e) => setVisualStyle(e.target.value)}
@@ -394,14 +402,15 @@ export function PostForm() {
                       backgroundColor: "rgba(29, 23, 52, 0.5)",
                       border: "1px solid rgba(91, 77, 168, 0.2)",
                       color: "white",
+                      fontSize: "16px",
                       appearance: "none",
                       WebkitAppearance: "none",
                       MozAppearance: "none",
                       backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%238f4bde' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
                       backgroundRepeat: "no-repeat",
                       backgroundPosition: "right 16px center",
-                      fontSize: "16px",
-                      fontFamily: "inherit"
+                      fontFamily: "inherit",
+                      boxSizing: "border-box"
                     }}
                   >
                     <option value="realistic">Realistic Photo</option>
@@ -414,7 +423,7 @@ export function PostForm() {
               </div>
             </div>
             
-            <div style={{ display: "flex", justifyContent: "center" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "8px" }}>
               <div style={{ position: "relative" }}>
                 <div 
                   style={{
@@ -436,7 +445,7 @@ export function PostForm() {
                     gap: "8px",
                     padding: "16px 32px",
                     borderRadius: "9999px",
-                    backgroundColor: "rgba(143, 75, 222, 0.15)",
+                    background: "linear-gradient(90deg, rgba(143, 75, 222, 0.8) 0%, rgba(70, 104, 234, 0.8) 100%)",
                     border: "1px solid rgba(143, 75, 222, 0.3)",
                     color: "white",
                     fontSize: "16px",
@@ -446,10 +455,44 @@ export function PostForm() {
                     overflow: "hidden",
                     transition: "all 0.2s ease",
                     opacity: !prompt.trim() ? 0.7 : 1,
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.25)"
                   }}
                 >
-                  <SparklesIcon size={20} />
-                  {isLoading ? "Generating..." : "Generate Post"}
+                  {isLoading ? (
+                    <>
+                      <svg 
+                        className="animate-spin" 
+                        style={{ 
+                          width: "20px", 
+                          height: "20px", 
+                          marginRight: "8px" 
+                        }} 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" 
+                        viewBox="0 0 24 24"
+                      >
+                        <circle 
+                          className="opacity-25" 
+                          cx="12" 
+                          cy="12" 
+                          r="10" 
+                          stroke="currentColor" 
+                          strokeWidth="4"
+                        ></circle>
+                        <path 
+                          className="opacity-75" 
+                          fill="currentColor" 
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <SparklesIcon style={{ width: "20px", height: "20px" }} />
+                      Generate Post
+                    </>
+                  )}
                 </button>
               </div>
             </div>
