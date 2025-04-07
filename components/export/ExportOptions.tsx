@@ -12,6 +12,7 @@ export function ExportOptions({ post }: ExportOptionsProps) {
   const [isCopied, setIsCopied] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isScheduling, setIsScheduling] = useState(false);
+  const [isScheduleFormOpen, setIsScheduleFormOpen] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<SocialPlatform | ''>('');
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
@@ -66,6 +67,7 @@ ${post.hashtags.map(tag => `#${tag}`).join(' ')}`;
       setSelectedPlatform('');
       setScheduledDate('');
       setScheduledTime('');
+      setIsScheduleFormOpen(false);
     }, 1500);
   };
   
@@ -88,119 +90,131 @@ ${post.hashtags.map(tag => `#${tag}`).join(' ')}`;
   };
   
   return (
-    <div className="rounded-lg border bg-card p-6 space-y-6">
-      <h3 className="text-lg font-medium">Export Options</h3>
+    <div className="rounded-xl border bg-card p-6 space-y-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+      <h3 className="text-xl font-semibold">Export Options</h3>
       
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={handleCopyToClipboard}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+          className="group flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:border-accent transition-all duration-200"
         >
-          {isCopied ? (
-            <Check className="h-5 w-5 text-green-500" />
-          ) : (
-            <Copy className="h-5 w-5" />
-          )}
-          <span className="text-sm">{isCopied ? 'Copied!' : 'Copy to Clipboard'}</span>
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-200">
+            {isCopied ? (
+              <Check className="h-5 w-5 text-green-500" />
+            ) : (
+              <Copy className="h-5 w-5 text-primary" />
+            )}
+          </div>
+          <span className="text-sm font-medium">{isCopied ? 'Copied!' : 'Copy to Clipboard'}</span>
         </button>
         
         <button
           onClick={handleDownload}
           disabled={isExporting}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+          className="group flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:border-accent transition-all duration-200 disabled:opacity-50 disabled:hover:bg-background disabled:hover:border-input"
         >
-          {isExporting ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <Download className="h-5 w-5" />
-          )}
-          <span className="text-sm">Download</span>
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-200">
+            {isExporting ? (
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            ) : (
+              <Download className="h-5 w-5 text-primary" />
+            )}
+          </div>
+          <span className="text-sm font-medium">Download</span>
         </button>
         
         <button
           onClick={handleShareLink}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+          className="group flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:border-accent transition-all duration-200"
         >
-          <Share2 className="h-5 w-5" />
-          <span className="text-sm">Share Link</span>
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-200">
+            <Share2 className="h-5 w-5 text-primary" />
+          </div>
+          <span className="text-sm font-medium">Share Link</span>
         </button>
         
         <button
-          onClick={() => document.getElementById('schedule-form')?.classList.toggle('hidden')}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+          onClick={() => setIsScheduleFormOpen(!isScheduleFormOpen)}
+          className="group flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:border-accent transition-all duration-200"
         >
-          <Calendar className="h-5 w-5" />
-          <span className="text-sm">Schedule Post</span>
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-200">
+            <Calendar className="h-5 w-5 text-primary" />
+          </div>
+          <span className="text-sm font-medium">Schedule Post</span>
         </button>
       </div>
       
-      <form 
-        id="schedule-form" 
-        onSubmit={handleSchedule} 
-        className="hidden space-y-4 border-t pt-4 mt-4"
+      <div 
+        className={`space-y-4 border-t pt-4 mt-4 overflow-hidden transition-all duration-300 ${
+          isScheduleFormOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+        }`}
       >
-        <div>
-          <label htmlFor="platform" className="block text-sm font-medium mb-1">
-            Platform
-          </label>
-          <select
-            id="platform"
-            value={selectedPlatform}
-            onChange={(e) => setSelectedPlatform(e.target.value as SocialPlatform)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-            required
-          >
-            <option value="">Select a platform</option>
-            <option value="twitter">Twitter</option>
-            <option value="instagram">Instagram</option>
-            <option value="facebook">Facebook</option>
-            <option value="linkedin">LinkedIn</option>
-          </select>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="date" className="block text-sm font-medium mb-1">
-              Date
-            </label>
-            <input
-              type="date"
-              id="date"
-              value={scheduledDate}
-              onChange={(e) => setScheduledDate(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-              required
-            />
+        <form onSubmit={handleSchedule}>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="platform" className="block text-sm font-medium mb-1">
+                Platform
+              </label>
+              <select
+                id="platform"
+                value={selectedPlatform}
+                onChange={(e) => setSelectedPlatform(e.target.value as SocialPlatform)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all duration-200"
+                required
+              >
+                <option value="">Select a platform</option>
+                <option value="twitter">Twitter</option>
+                <option value="instagram">Instagram</option>
+                <option value="facebook">Facebook</option>
+                <option value="linkedin">LinkedIn</option>
+              </select>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="date" className="block text-sm font-medium mb-1">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  id="date"
+                  value={scheduledDate}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all duration-200"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="time" className="block text-sm font-medium mb-1">
+                  Time
+                </label>
+                <input
+                  type="time"
+                  id="time"
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all duration-200"
+                  required
+                />
+              </div>
+            </div>
+            
+            <button
+              type="submit"
+              disabled={isScheduling || !selectedPlatform || !scheduledDate || !scheduledTime}
+              className="flex items-center justify-center gap-2 w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+            >
+              {isScheduling ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Calendar className="h-4 w-4" />
+              )}
+              Schedule Post
+            </button>
           </div>
-          
-          <div>
-            <label htmlFor="time" className="block text-sm font-medium mb-1">
-              Time
-            </label>
-            <input
-              type="time"
-              id="time"
-              value={scheduledTime}
-              onChange={(e) => setScheduledTime(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-              required
-            />
-          </div>
-        </div>
-        
-        <button
-          type="submit"
-          disabled={isScheduling || !selectedPlatform || !scheduledDate || !scheduledTime}
-          className="flex items-center justify-center gap-2 w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          {isScheduling ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Calendar className="h-4 w-4" />
-          )}
-          Schedule Post
-        </button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 } 

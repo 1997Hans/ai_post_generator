@@ -44,6 +44,7 @@ export default function RootLayout({
           `,
           backgroundAttachment: "fixed"
         }}
+        suppressHydrationWarning
       >
         <ThemeProvider
           attribute="class"

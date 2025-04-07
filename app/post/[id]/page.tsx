@@ -1,16 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Edit } from 'lucide-react';
-import { Post } from '@/lib/types';
-import { PostPreview } from '@/components/PostPreview';
-import { FeedbackForm } from '@/components/feedback/FeedbackForm';
-import { ExportOptions } from '@/components/export/ExportOptions';
 import { getPost } from '@/app/actions/db-actions';
+import { Post } from '@/lib/types';
 
 export default function PostPage({ params }: { params: { id: string } }) {
+  // Unwrap params using React.use()
+  const unwrappedParams = React.use(params);
+  const postId = unwrappedParams.id;
+  
   const [post, setPost] = useState<Post | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,13 +20,9 @@ export default function PostPage({ params }: { params: { id: string } }) {
     const fetchPost = async () => {
       try {
         setIsLoading(true);
-        console.log('Fetching post with ID:', params.id);
-        
-        const response = await getPost(params.id);
+        const response = await getPost(postId);
         
         if (response.success && response.post) {
-          console.log('Post found:', response.post);
-          
           // Normalize the post data to ensure all fields are properly formatted
           const normalizedPost: Post = {
             id: response.post.id,
@@ -43,80 +39,289 @@ export default function PostPage({ params }: { params: { id: string } }) {
           
           setPost(normalizedPost);
         } else {
-          setError(response.error || 'Post not found. It may have been deleted or never existed.');
+          setError(response.error || 'Post not found');
         }
       } catch (err) {
-        setError('Error loading post data. Please try again later.');
-        console.error('Failed to load post:', err);
+        setError('Error loading post data');
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchPost();
-  }, [params.id]);
-  
-  const handleFeedbackSubmitted = () => {
-    // In a real app, we might refresh the post data here
-    console.log('Feedback submitted successfully');
-  };
+  }, [postId]);
   
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <div style={{ textAlign: 'center', padding: '40px' }}>Loading...</div>;
   }
   
   if (error || !post) {
     return (
-      <div className="container mx-auto px-4 py-12 max-w-lg">
-        <div className="flex flex-col items-center justify-center p-8 text-center bg-card rounded-lg border">
-          <p className="text-muted-foreground text-lg mb-4">{error || 'Post not found'}</p>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="mt-4 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
-          >
-            Go to Dashboard
-          </button>
-        </div>
+      <div style={{ textAlign: 'center', padding: '40px' }}>
+        <p>{error || 'Post not found'}</p>
+        <button onClick={() => router.push('/dashboard')}>
+          Go to Dashboard
+        </button>
       </div>
     );
   }
   
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="flex items-center justify-between mb-8">
-        <Link 
-          href="/dashboard" 
-          className="flex items-center text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+    <div style={{ padding: '20px', maxWidth: '100%' }}>
+      <div style={{ display: 'flex', marginBottom: '20px' }}>
+        <Link href="/dashboard" style={{ marginRight: '20px', fontSize: '14px' }}>
           Back to Dashboard
         </Link>
-        
-        <Link
-          href={`/edit/${post.id}`}
-          className="flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          <Edit className="mr-2 h-4 w-4" />
+        <Link href={`/edit/${post.id}`} style={{ fontSize: '14px' }}>
           Edit Post
         </Link>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          <div className="rounded-lg border bg-card p-6">
-            <h1 className="text-xl font-semibold mb-4">Post Details</h1>
-            <PostPreview post={post} />
+      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px' }}>Post Details</h1>
+      
+      {post.imageUrl && (
+        <div style={{ marginBottom: '20px' }}>
+          <img 
+            src={post.imageUrl} 
+            alt={post.prompt} 
+            style={{ 
+              width: '100%', 
+              maxHeight: '500px',
+              objectFit: 'cover'
+            }} 
+          />
+        </div>
+      )}
+      
+      <div style={{ marginBottom: '30px' }}>
+        <h2 style={{ fontSize: '18px', marginBottom: '10px' }}>Content</h2>
+        <p style={{ marginBottom: '15px' }}>{post.content}</p>
+        
+        <div style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
+          <span style={{ marginRight: '20px' }}>Tone: {post.tone || 'casual'}</span>
+          <span>Style: {post.visualStyle || 'cinematic'}</span>
+        </div>
+        
+        {post.hashtags.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '15px' }}>
+            {post.hashtags.map((tag, index) => (
+              <span
+                key={index}
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  color: 'inherit',
+                  padding: '3px 8px',
+                  borderRadius: '15px',
+                  fontSize: '12px'
+                }}
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      
+      <div style={{ marginBottom: '30px' }}>
+        <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>Export Options</h2>
+        
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(4, 1fr)', 
+          gap: '10px',
+          marginBottom: '20px'
+        }}>
+          <button style={{ 
+            padding: '10px',
+            border: '1px solid #333',
+            borderRadius: '5px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'transparent'
+          }}>
+            <span style={{ fontSize: '12px', marginTop: '5px' }}>Copy to Clipboard</span>
+          </button>
+          
+          <button style={{ 
+            padding: '10px',
+            border: '1px solid #333',
+            borderRadius: '5px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'transparent'
+          }}>
+            <span style={{ fontSize: '12px', marginTop: '5px' }}>Download</span>
+          </button>
+          
+          <button style={{ 
+            padding: '10px',
+            border: '1px solid #333',
+            borderRadius: '5px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'transparent'
+          }}>
+            <span style={{ fontSize: '12px', marginTop: '5px' }}>Share Link</span>
+          </button>
+          
+          <button style={{ 
+            padding: '10px',
+            border: '1px solid #333',
+            borderRadius: '5px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'transparent'
+          }}>
+            <span style={{ fontSize: '12px', marginTop: '5px' }}>Schedule Post</span>
+          </button>
+        </div>
+        
+        <div style={{ 
+          border: '1px solid #333',
+          borderRadius: '5px',
+          padding: '15px',
+        }}>
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px' }}>
+              Platform
+            </label>
+            <select style={{ 
+              width: '100%', 
+              padding: '8px', 
+              backgroundColor: '#222',
+              border: '1px solid #333',
+              borderRadius: '5px',
+              fontSize: '14px'
+            }}>
+              <option value="">Select a platform</option>
+              <option value="twitter">Twitter</option>
+              <option value="instagram">Instagram</option>
+              <option value="facebook">Facebook</option>
+              <option value="linkedin">LinkedIn</option>
+            </select>
+          </div>
+          
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: '1fr 1fr', 
+            gap: '10px',
+            marginBottom: '15px'
+          }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px' }}>
+                Date
+              </label>
+              <input 
+                type="date" 
+                style={{ 
+                  width: '100%', 
+                  padding: '8px', 
+                  backgroundColor: '#222',
+                  border: '1px solid #333',
+                  borderRadius: '5px',
+                  fontSize: '14px'
+                }}
+              />
+            </div>
+            
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px' }}>
+                Time
+              </label>
+              <input 
+                type="time" 
+                style={{ 
+                  width: '100%', 
+                  padding: '8px', 
+                  backgroundColor: '#222',
+                  border: '1px solid #333',
+                  borderRadius: '5px',
+                  fontSize: '14px'
+                }}
+              />
+            </div>
+          </div>
+          
+          <button style={{ 
+            width: '100%',
+            padding: '10px',
+            backgroundColor: '#5552fe',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            fontSize: '14px',
+            fontWeight: 'medium'
+          }}>
+            Schedule Post
+          </button>
+        </div>
+      </div>
+      
+      <div style={{ marginBottom: '30px' }}>
+        <h2 style={{ fontSize: '18px', marginBottom: '10px' }}>Rate this Post</h2>
+        <p style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
+          How would you rate this post?
+        </p>
+        
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center',
+          gap: '10px',
+          marginBottom: '20px'
+        }}>
+          {[1, 2, 3, 4, 5].map((value) => (
+            <button
+              key={value}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                padding: '5px',
+                cursor: 'pointer'
+              }}
+            >
+              ★
+            </button>
+          ))}
+        </div>
+        
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px' }}>
+            Comments (optional)
+          </label>
+          <textarea
+            rows={3}
+            placeholder="Share your thoughts about this post..."
+            style={{ 
+              width: '100%', 
+              padding: '8px', 
+              backgroundColor: '#222',
+              border: '1px solid #333',
+              borderRadius: '5px',
+              fontSize: '14px',
+              resize: 'none'
+            }}
+          ></textarea>
+          <div style={{ textAlign: 'right', fontSize: '12px', color: '#666', marginTop: '5px' }}>
+            0/500
           </div>
         </div>
         
-        <div className="space-y-8">
-          <ExportOptions post={post} />
-          <FeedbackForm postId={post.id} onFeedbackSubmitted={handleFeedbackSubmitted} />
-        </div>
+        <button style={{ 
+          width: '100%',
+          padding: '10px',
+          backgroundColor: '#5552fe',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          fontSize: '14px',
+          fontWeight: 'medium'
+        }}>
+          Submit Feedback
+        </button>
       </div>
     </div>
   );
