@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getPost, approvePost, rejectPost } from '@/app/actions/db-actions';
 import { Post } from '@/lib/types';
-import { ArrowLeft, Edit, Copy, Download, Share, Calendar, Star, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Edit, Copy, Download, Share, Calendar } from 'lucide-react';
 import { ApprovalStatusBadge } from '@/components/approval/ApprovalStatusBadge';
-import { StatusDisplay } from '@/components/StatusDisplay';
 import { toast } from 'sonner';
 
 export default function PostPage({ params }: { params: { id: string } }) {
@@ -166,13 +165,6 @@ export default function PostPage({ params }: { params: { id: string } }) {
     );
   }
 
-  const containerStyle = {
-    maxWidth: '1024px',
-    margin: '0 auto',
-    padding: '0 20px',
-    color: 'white',
-  };
-  
   // Simple reject modal
   const RejectModal = () => {
     if (!showRejectModal) return null;
@@ -255,6 +247,13 @@ export default function PostPage({ params }: { params: { id: string } }) {
     );
   };
   
+  const containerStyle = {
+    maxWidth: '1024px',
+    margin: '0 auto',
+    padding: '0 20px',
+    color: 'white',
+  };
+  
   return (
     <div style={{ 
       minHeight: '100vh',
@@ -315,16 +314,6 @@ export default function PostPage({ params }: { params: { id: string } }) {
           <h2 style={{ fontSize: '18px', marginBottom: '12px' }}>Content</h2>
           <p style={{ marginBottom: '16px', lineHeight: '1.5' }}>{post.content}</p>
           
-          <div className="flex justify-end mb-4">
-            {/* Only show tone and status if post is not approved */}
-            {!post.approved && (
-              <div className="flex flex-col items-end">
-                <div className="text-sm text-gray-400">{post.tone || 'casual'}</div>
-                <ApprovalStatusBadge approved={post.approved} variant="detail" />
-              </div>
-            )}
-          </div>
-          
           {post.hashtags.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
               {post.hashtags.map((tag, index) => (
@@ -345,7 +334,7 @@ export default function PostPage({ params }: { params: { id: string } }) {
           )}
           
           {/* Conditional Approval/Reject buttons - only show if not approved */}
-          {!post.approved ? (
+          {post.approved === null && (
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
               <button
                 onClick={handleApprove}
@@ -388,30 +377,6 @@ export default function PostPage({ params }: { params: { id: string } }) {
               >
                 {isSubmitting ? 'Processing...' : 'Reject'}
               </button>
-            </div>
-          ) : (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '12px', 
-              marginTop: '24px',
-              padding: '12px 16px',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              borderRadius: '8px',
-              border: '1px solid rgba(16, 185, 129, 0.2)'
-            }}>
-              <div style={{ 
-                width: '24px', 
-                height: '24px', 
-                borderRadius: '50%', 
-                backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <CheckCircle className="w-4 h-4 text-green-500" />
-              </div>
-              <span style={{ color: '#10b981', fontWeight: '500' }}>This post has been approved</span>
             </div>
           )}
         </div>
@@ -760,4 +725,4 @@ export default function PostPage({ params }: { params: { id: string } }) {
       <RejectModal />
     </div>
   );
-} 
+}
