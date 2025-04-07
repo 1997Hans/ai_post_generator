@@ -1,32 +1,56 @@
-import { Suspense } from "react";
-import DashboardContent from "@/components/dashboard-content";
-import DashboardLoading from "@/components/dashboard-loading";
+import { PostHistoryList } from '@/components/history/PostHistoryList';
+import Link from 'next/link';
+import { PlusCircle } from 'lucide-react';
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
-// Title for the dashboard
-export const metadata = {
-  title: "Post Management Dashboard | Social Media Post Generator",
-  description: "Manage and monitor your social media posts"
-};
-
-export default function Dashboard({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
-  // We won't access searchParams at all in the server component
-  // Let the client component handle everything
-  
+export default function DashboardPage() {
   return (
-    <main className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500">
-        Post Management Dashboard
-      </h1>
-      <Suspense fallback={<DashboardLoading />}>
-        <DashboardContent />
-      </Suspense>
-    </main>
+    <div style={{ 
+      padding: "48px 24px", 
+      maxWidth: "1200px", 
+      margin: "0 auto", 
+      width: "100%"
+    }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "32px"
+      }}>
+        <div>
+          <h1 style={{
+            fontSize: "36px",
+            fontWeight: "bold",
+            marginBottom: "8px"
+          }}>Dashboard</h1>
+          <p style={{
+            color: "#a7a3bc",
+            fontSize: "16px"
+          }}>Manage and track all your generated posts</p>
+        </div>
+        
+        <Link
+          href="/"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            backgroundColor: "#7c3aed",
+            color: "white",
+            padding: "8px 16px",
+            borderRadius: "8px",
+            fontSize: "14px",
+            fontWeight: "500",
+            transition: "background-color 0.2s",
+            textDecoration: "none"
+          }}
+        >
+          <PlusCircle size={16} style={{ marginRight: "8px" }} />
+          Create New Post
+        </Link>
+      </div>
+      
+      <div>
+        <PostHistoryList />
+      </div>
+    </div>
   );
 } 

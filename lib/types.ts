@@ -80,18 +80,51 @@ export interface ErrorResponse {
 
 export interface Post {
   id: string;
-  content: string;
-  image_url?: string | null;
-  hashtags: string;
   prompt: string;
-  refined_prompt?: string | null;
-  tone?: string | null;
-  visual_style?: string | null;
-  created_at: string;
-  updated_at?: string | null;
-  approved: boolean;
-  feedback?: string | null;
+  refinedPrompt?: string;
+  content: string;
+  caption?: string;
+  hashtags: string[];
+  imageUrl?: string;
+  tone?: string;
+  visualStyle?: string;
+  createdAt: string;
+  updatedAt: string;
 }
+
+export interface PostHistory {
+  posts: Post[];
+}
+
+export interface FeedbackData {
+  postId: string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+}
+
+export interface PostRequestInput {
+  prompt: string;
+  tone?: string;
+  visualStyle?: string;
+  brandingImageUrl?: string;
+}
+
+export interface PostOutput {
+  id: string;
+  content: string;
+  caption?: string;
+  hashtags: string[];
+  imageUrl?: string;
+}
+
+export interface ExportOptions {
+  format: 'text' | 'image' | 'schedule';
+  platform?: 'twitter' | 'instagram' | 'facebook' | 'linkedin';
+  scheduledTime?: string;
+}
+
+export type SocialPlatform = 'twitter' | 'instagram' | 'facebook' | 'linkedin';
 
 export interface PostResult {
   content: string;
