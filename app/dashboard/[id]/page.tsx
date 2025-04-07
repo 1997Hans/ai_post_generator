@@ -11,16 +11,16 @@ import { PostActions } from "@/components/post-actions";
 import { ApprovalStatusBadge } from "@/components/approval/ApprovalStatusBadge";
 import { FeedbackDialog } from "@/components/approval/FeedbackDialog";
 
-// Define correct types for Next.js 15 static export
-type PageParams = {
+// Correct type definition for Next.js 15 with React 19
+interface PostPageParams {
   id: string;
-};
+}
 
-type PageProps = {
-  params: PageParams;
-};
-
-export default async function PostDetailPage({ params }: PageProps) {
+export default async function PostDetailPage({
+  params,
+}: {
+  params: PostPageParams;
+}) {
   const { post, success } = await getPost(params.id);
   
   if (!success || !post) {
