@@ -26,3 +26,42 @@ export function extractJSONFromString(text: string): any {
   
   return null;
 }
+
+/**
+ * Component boundary utilities - helps optimize RSC and Client Components
+ */
+
+export function isProdEnvironment() {
+  return process.env.NODE_ENV === 'production';
+}
+
+/**
+ * Analytics tracking functions
+ */
+export function trackGenerationMetric(metricName: string, value: number) {
+  if (typeof window !== 'undefined') {
+    // In a real implementation, this would send to your analytics provider
+    console.log(`[Analytics] ${metricName}: ${value}`);
+    
+    // Example implementation with web vitals
+    if (window.performance && window.performance.mark) {
+      window.performance.mark(`metric_${metricName}`);
+    }
+  }
+}
+
+export function trackEvent(eventName: string, properties?: Record<string, any>) {
+  if (typeof window !== 'undefined') {
+    console.log(`[Event] ${eventName}`, properties);
+    
+    // This would be replaced with actual analytics implementation
+    // e.g., mixpanel.track(eventName, properties)
+  }
+}
+
+export function measureGenerationTime(generationId: string, startTime: number) {
+  const endTime = performance.now();
+  const duration = endTime - startTime;
+  trackGenerationMetric(`generation_time_${generationId}`, duration);
+  return duration;
+}

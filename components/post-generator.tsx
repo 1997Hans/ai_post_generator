@@ -5,19 +5,28 @@ import { PromptForm } from "./prompt-form"
 import { PostPreview } from "./post-preview"
 import { useToast } from "./ui/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
+import { Suspense, useCallback, useTransition } from "react"
+import { PostSkeleton } from "./PostSkeleton"
+import { ErrorBoundary } from "./ErrorBoundary"
+import { useAnalytics } from "../lib/hooks/useAnalytics"
+import { measureGenerationTime } from "../lib/utils"
 
 export function PostGenerator() {
   const [isGenerating, setIsGenerating] = React.useState(false)
+  const [isPending, startTransition] = useTransition()
   const [postContent, setPostContent] = React.useState<{
     text: string
     image?: string
     hashtags: string[]
   } | null>(null)
+  const [activeTab, setActiveTab] = React.useState("create")
   const { toast } = useToast()
+  const { trackPostGeneration, trackPostApproval } = useAnalytics()
 
-  async function handleGeneratePost(formData: FormData) {
+  const handleGeneratePost = useCallback(async (formData: FormData) => {
     try {
       setIsGenerating(true)
+      const startTime = performance.now()
       
       const prompt = formData.get("prompt") as string
       const platform = formData.get("platform") as string
@@ -36,15 +45,33 @@ export function PostGenerator() {
       // For now it's just a placeholder that returns after a delay
       await new Promise(resolve => setTimeout(resolve, 2000))
       
-      setPostContent({
+      const content = {
         text: `Generated post about "${prompt}" for ${platform} with a ${tone} tone. This is a placeholder for the actual AI-generated content that would come from OpenAI or another model.`,
         hashtags: ["#AI", "#SocialMedia", "#ContentCreation"],
         image: "https://images.unsplash.com/photo-1569396116180-210c182bedb8?q=80&w=1374&auto=format&fit=crop"
+      }
+      
+      setPostContent(content)
+      
+      // Track generation metrics
+      const responseTime = measureGenerationTime('post-generator', startTime)
+      trackPostGeneration({
+        promptLength: prompt.length,
+        responseTime,
+        hasImage: !!content.image,
+        postLength: content.text.length,
+        hashtagCount: content.hashtags.length,
+        provider: 'placeholder', // Would be 'openai', 'gemini', etc.
       })
       
       toast({
         title: "Success",
         description: "Post generated successfully!",
+      })
+      
+      // Auto-switch to preview tab after generation
+      startTransition(() => {
+        setActiveTab("preview")
       })
     } catch (error) {
       console.error(error)
@@ -56,25 +83,28 @@ export function PostGenerator() {
     } finally {
       setIsGenerating(false)
     }
-  }
+  }, [toast, trackPostGeneration])
 
-  function handleRefinePost() {
+  const handleRefinePost = useCallback(() => {
     toast({
       description: "Refining post... This would trigger another AI call",
     })
-  }
+  }, [toast])
 
-  function handleApprovePost() {
+  const handleApprovePost = useCallback(() => {
+    // In a real implementation, this would save to your database
+    trackPostApproval('placeholder-post-id')
     toast({
       title: "Post Approved",
       description: "Post has been approved and saved",
     })
-  }
+  }, [toast, trackPostApproval])
 
   return (
     <div className="space-y-6">
       <Tabs 
-        defaultValue="create" 
+        value={activeTab}
+        onValueChange={setActiveTab}
         className="rounded-xl p-1 overflow-hidden relative shadow-lg"
         style={{
           backgroundColor: "rgba(20, 15, 35, 0.6)",
@@ -105,19 +135,25 @@ export function PostGenerator() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="create" className="space-y-4 p-4 relative z-10">
-          <PromptForm 
-            onSubmit={handleGeneratePost} 
-            isGenerating={isGenerating} 
-          />
+          <ErrorBoundary fallback="There was an error loading the form. Please try again.">
+            <PromptForm 
+              onSubmit={handleGeneratePost} 
+              isGenerating={isGenerating || isPending} 
+            />
+          </ErrorBoundary>
         </TabsContent>
         <TabsContent value="preview" className="p-4 relative z-10">
-          {postContent && (
-            <PostPreview 
-              post={postContent} 
-              onRefine={handleRefinePost}
-              onApprove={handleApprovePost}
-            />
-          )}
+          <ErrorBoundary fallback="There was an error loading the preview. Please try again.">
+            <Suspense fallback={<PostSkeleton />}>
+              {postContent && (
+                <PostPreview 
+                  post={postContent} 
+                  onRefine={handleRefinePost}
+                  onApprove={handleApprovePost}
+                />
+              )}
+            </Suspense>
+          </ErrorBoundary>
         </TabsContent>
       </Tabs>
     </div>
