@@ -7,21 +7,9 @@ interface StatusDisplayProps {
   tone?: string | null;
   approved?: boolean | null;
   className?: string;
-  compact?: boolean;
 }
 
-export function StatusDisplay({ tone = 'casual', approved = null, className, compact = false }: StatusDisplayProps) {
-  if (compact) {
-    return (
-      <div className={cn('flex flex-col items-end gap-1', className)}>
-        <div className="text-sm text-gray-400">{tone}</div>
-        <div className="flex items-center bg-gray-800/50 px-3 py-0.5 rounded-full">
-          <span className="text-xs font-medium text-gray-300">Pending</span>
-        </div>
-      </div>
-    );
-  }
-  
+export function StatusDisplay({ tone = 'casual', approved = null, className }: StatusDisplayProps) {
   return (
     <div className={cn('status-container', className)}>
       {/* Tone display */}
@@ -49,4 +37,4 @@ export function StatusDisplay({ tone = 'casual', approved = null, className, com
       </div>
     </div>
   );
-} 
+}
