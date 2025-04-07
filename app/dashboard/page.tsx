@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [showRefreshAlert, setShowRefreshAlert] = useState(false);
+  const [lastRefreshTimeDisplay, setLastRefreshTimeDisplay] = useState('');
   
   // Function to refresh data from database
   const refreshData = () => {
@@ -31,8 +32,9 @@ export default function DashboardPage() {
       console.log('Force refreshing data with no cache...');
       setIsLoading(true);
       
-      // Use a timestamp to avoid any caching
-      const timestamp = Date.now();
+      // Generate timestamp within the function call to avoid hydration issues
+      // This is safe because it's called directly from a user action
+      const timestamp = new Date().getTime();
       const response = await fetch(`/api/posts?nocache=${timestamp}`, {
         cache: 'no-store',
         headers: {
@@ -71,7 +73,8 @@ export default function DashboardPage() {
     async function loadPostsFromDb() {
       try {
         console.log('Loading posts from database...');
-        const cacheBuster = `?timestamp=${Date.now()}`;
+        // Move the timestamp generation inside useEffect to avoid hydration mismatches
+        const cacheBuster = `?timestamp=${new Date().getTime()}`;
         const response = await fetch(`/api/posts${cacheBuster}`, {
           cache: 'no-store',
           headers: {
@@ -108,6 +111,11 @@ export default function DashboardPage() {
   const showRefreshReminder = () => {
     setShowRefreshAlert(true);
   };
+
+  // Update the time display on client-side only
+  useEffect(() => {
+    setLastRefreshTimeDisplay(lastRefresh.toLocaleTimeString());
+  }, [lastRefresh]);
 
   return (
     <div style={{ 
@@ -247,7 +255,7 @@ export default function DashboardPage() {
         marginBottom: "8px",
         gap: "8px"
       }}>
-        <span>Last database sync: {lastRefresh.toLocaleTimeString()}</span>
+        <span>Last database sync: {lastRefreshTimeDisplay}</span>
         <span style={{ color: "#7c3aed", cursor: "help" }} title="The dashboard always shows data from the database. Refresh to see the latest changes.">ⓘ</span>
       </div>
       
