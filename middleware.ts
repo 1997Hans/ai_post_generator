@@ -5,15 +5,14 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const url = request.nextUrl.toString();
   
-  // Only redirect placeholder images, not real images
-  // Check for exact placeholder domain, not just a partial string match
-  if (new URL(url).hostname === 'via.placeholder.com') {
+  // Handle all via.placeholder.com URLs
+  if (url.includes('via.placeholder.com')) {
     console.log('Redirecting placeholder URL:', url);
     return NextResponse.redirect(new URL('/placeholder-image.svg', request.url));
   }
   
   // Handle example.com URLs
-  if (new URL(url).hostname === 'example.com') {
+  if (url.includes('example.com')) {
     console.log('Redirecting example.com URL:', url);
     return NextResponse.redirect(new URL('/placeholder-image.svg', request.url));
   }

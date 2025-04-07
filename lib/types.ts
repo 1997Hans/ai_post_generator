@@ -119,26 +119,4 @@ export interface PostInput {
   refined_prompt?: string | null;
   tone?: string | null;
   visual_style?: string | null;
-}
-
-/**
- * Sanitizes and validates an image URL, ensuring it's a valid URL
- * Returns the original URL if it's valid, or null if it's not
- */
-export function sanitizeImageUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  
-  try {
-    // Check if it's a valid URL or data URL
-    if (url.startsWith('data:image')) {
-      return url;
-    }
-    
-    // Use URL constructor to validate URL format
-    const parsedUrl = new URL(url);
-    return url;
-  } catch (error) {
-    console.error(`Invalid image URL: ${url}`, error);
-    return null;
-  }
 } 
