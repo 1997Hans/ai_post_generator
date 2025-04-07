@@ -11,6 +11,26 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# Root path redirect (highest priority)
+[[redirects]]
+  from = "/"
+  to = "/.netlify/functions/nextjs-page"
+  status = 200
+  force = true
+
+# Handle Next.js routes
+[[redirects]]
+  from = "/dashboard"
+  to = "/.netlify/functions/nextjs-page/dashboard"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/dashboard/*"
+  to = "/.netlify/functions/nextjs-page/dashboard/:splat"
+  status = 200
+  force = true
+
 # These redirects are needed for Next.js App Router
 [[redirects]]
   from = "/_next/static/*"
@@ -37,6 +57,7 @@
   to = "/.netlify/functions/api/:splat"
   status = 200
 
+# Catch-all redirect (lowest priority)
 [[redirects]]
   from = "/*"
   to = "/.netlify/functions/nextjs-page"

@@ -1,6 +1,10 @@
 import { PostForm } from "@/components/post-form";
+import { redirect } from "next/navigation";
 
 export default function Home() {
+  // For deployment, redirect to dashboard directly
+  redirect("/dashboard");
+  
   return (
     <div style={{ 
       flex: 1, 
