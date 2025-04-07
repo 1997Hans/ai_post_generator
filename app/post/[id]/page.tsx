@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getPost, approvePost, rejectPost } from '@/app/actions/db-actions';
 import { Post } from '@/lib/types';
-import { ArrowLeft, Edit, Copy, Download, Share, Calendar, Star, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Edit, Copy, Download, Share, Calendar, Star, CheckCircle } from 'lucide-react';
 import { ApprovalStatusBadge } from '@/components/approval/ApprovalStatusBadge';
 import { StatusDisplay } from '@/components/StatusDisplay';
 import { toast } from 'sonner';
@@ -318,7 +318,7 @@ export default function PostPage({ params }: { params: { id: string } }) {
           <div className="flex justify-end mb-4">
             {/* Only show tone and status if post is not approved */}
             {!post.approved && (
-              <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-col items-end">
                 <div className="text-sm text-gray-400">{post.tone || 'casual'}</div>
                 <ApprovalStatusBadge approved={post.approved} variant="detail" />
               </div>
@@ -344,8 +344,8 @@ export default function PostPage({ params }: { params: { id: string } }) {
             </div>
           )}
           
-          {/* Status-based action buttons */}
-          {post.approved === null && (
+          {/* Conditional Approval/Reject buttons - only show if not approved */}
+          {!post.approved ? (
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
               <button
                 onClick={handleApprove}
@@ -389,9 +389,7 @@ export default function PostPage({ params }: { params: { id: string } }) {
                 {isSubmitting ? 'Processing...' : 'Reject'}
               </button>
             </div>
-          )}
-          
-          {post.approved === true && (
+          ) : (
             <div style={{ 
               display: 'flex', 
               alignItems: 'center', 
@@ -414,32 +412,6 @@ export default function PostPage({ params }: { params: { id: string } }) {
                 <CheckCircle className="w-4 h-4 text-green-500" />
               </div>
               <span style={{ color: '#10b981', fontWeight: '500' }}>This post has been approved</span>
-            </div>
-          )}
-          
-          {post.approved === false && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '12px', 
-              marginTop: '24px',
-              padding: '12px 16px',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              borderRadius: '8px',
-              border: '1px solid rgba(239, 68, 68, 0.2)'
-            }}>
-              <div style={{ 
-                width: '24px', 
-                height: '24px', 
-                borderRadius: '50%', 
-                backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <XCircle className="w-4 h-4 text-red-500" />
-              </div>
-              <span style={{ color: '#ef4444', fontWeight: '500' }}>This post has been rejected</span>
             </div>
           )}
         </div>

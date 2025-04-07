@@ -470,7 +470,7 @@ export function PostHistoryList({
                     ? format(new Date(post.createdAt), 'MMM d, yyyy')
                     : 'No date available'}
                 </span>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                   <span>{post.tone || 'No tone'}</span>
                   <ApprovalStatusBadge approved={post.approved} />
                 </div>
@@ -490,44 +490,41 @@ export function PostHistoryList({
                   gap: "8px",
                   marginRight: "auto"
                 }}>
-                  {/* Only show approve button if post is pending or approved */}
-                  {post.approved !== false && (
-                    <button
-                      onClick={() => handleApprove(post.id)}
-                      disabled={isApproving === post.id || post.approved === true}
-                      style={{
-                        padding: "6px 10px",
-                        borderRadius: "4px",
-                        backgroundColor: post.approved === true ? "rgba(74, 222, 128, 0.2)" : "rgba(74, 222, 128, 0.8)",
-                        border: "none",
-                        color: post.approved === true ? "rgba(74, 222, 128, 0.8)" : "white",
-                        fontSize: "12px",
-                        fontWeight: "500",
-                        cursor: isApproving === post.id ? "wait" : "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        opacity: isApproving === post.id ? 0.7 : 1,
-                        transition: "background-color 0.2s"
-                      }}
-                      title={post.approved ? "Post is approved" : "Approve this post"}
-                    >
-                      <CheckCircle size={12} />
-                      {post.approved ? "Approved" : "Approve"}
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleApprove(post.id)}
+                    disabled={isApproving === post.id || post.approved === true}
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: "4px",
+                      backgroundColor: post.approved === true ? "rgba(74, 222, 128, 0.2)" : "rgba(74, 222, 128, 0.8)",
+                      border: "none",
+                      color: post.approved === true ? "rgba(74, 222, 128, 0.8)" : "white",
+                      fontSize: "12px",
+                      fontWeight: "500",
+                      cursor: isApproving === post.id ? "wait" : "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      opacity: isApproving === post.id ? 0.7 : 1,
+                      transition: "background-color 0.2s"
+                    }}
+                    title={post.approved ? "Post is approved" : "Approve this post"}
+                  >
+                    <CheckCircle size={12} />
+                    {post.approved ? "Approved" : "Approve"}
+                  </button>
                   
-                  {/* Only show reject button if post is pending or rejected */}
+                  {/* Only show reject button if post is not approved */}
                   {post.approved !== true && (
                     <button
                       onClick={() => setShowRejectDialog(post.id)}
-                      disabled={isRejecting === post.id || post.approved === false}
+                      disabled={isRejecting === post.id}
                       style={{
                         padding: "6px 10px",
                         borderRadius: "4px",
-                        backgroundColor: post.approved === false ? "rgba(239, 68, 68, 0.2)" : "rgba(239, 68, 68, 0.8)",
+                        backgroundColor: "rgba(239, 68, 68, 0.8)",
                         border: "none",
-                        color: post.approved === false ? "rgba(239, 68, 68, 0.8)" : "white",
+                        color: "white",
                         fontSize: "12px",
                         fontWeight: "500",
                         cursor: isRejecting === post.id ? "wait" : "pointer",
@@ -537,10 +534,10 @@ export function PostHistoryList({
                         opacity: isRejecting === post.id ? 0.7 : 1,
                         transition: "background-color 0.2s"
                       }}
-                      title={post.approved === false ? "Post is rejected" : "Reject this post"}
+                      title="Reject this post with feedback"
                     >
                       <XCircle size={12} />
-                      {post.approved === false ? "Rejected" : "Reject"}
+                      Reject
                     </button>
                   )}
                 </div>

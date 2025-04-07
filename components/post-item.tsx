@@ -192,7 +192,7 @@ export function PostItem({ post }: PostItemProps) {
       </CardHeader>
       <Link href={`/dashboard/${post.id}`} className="flex-grow group">
         <CardContent className="p-4 pt-2 flex-grow relative">
-          <div className="absolute top-4 right-4 z-10">
+          <div className="absolute top-2 right-2 z-10">
             {!approved && (
               <StatusDisplay tone={post.tone} approved={approved} />
             )}
