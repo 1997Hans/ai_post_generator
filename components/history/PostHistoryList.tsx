@@ -7,7 +7,31 @@ import { Trash2, Edit, Eye, Sparkles, RefreshCw, Database } from 'lucide-react';
 import { Post } from '@/lib/types';
 import { deletePost as deleteDbPost } from '@/app/actions/db-actions';
 import { v4 as uuidv4 } from 'uuid';
-import { ApprovalStatusBadge } from '../approval/ApprovalStatusBadge';
+
+// Simple local badge component to replace the external one
+const ApprovalStatusBadge = ({ approved }: { approved: boolean | null }) => {
+  return (
+    <div style={{
+      backgroundColor: approved === true ? 'rgba(16, 185, 129, 0.2)' : 
+                        approved === false ? 'rgba(239, 68, 68, 0.2)' : 
+                        'rgba(107, 114, 128, 0.2)',
+      color: approved === true ? '#10b981' : 
+             approved === false ? '#ef4444' : 
+             '#6b7280',
+      padding: '2px 8px',
+      borderRadius: '12px',
+      fontSize: '10px',
+      fontWeight: '500',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      {approved === true ? 'Approved' : 
+       approved === false ? 'Rejected' : 
+       'Pending'}
+    </div>
+  );
+};
 
 interface PostHistoryListProps {
   dbPosts?: Post[];

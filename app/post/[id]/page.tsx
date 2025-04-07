@@ -6,8 +6,34 @@ import Link from 'next/link';
 import { getPost, approvePost, rejectPost } from '@/app/actions/db-actions';
 import { Post } from '@/lib/types';
 import { ArrowLeft, Edit, Copy, Download, Share, Calendar } from 'lucide-react';
-import { ApprovalStatusBadge } from '@/components/approval/ApprovalStatusBadge';
 import { toast } from 'sonner';
+
+// Simple local badge component to replace the external one
+const ApprovalStatusBadge = ({ approved, variant }: { approved: boolean | null; variant?: string }) => {
+  const isLarge = variant === 'large';
+  
+  return (
+    <div style={{
+      backgroundColor: approved === true ? 'rgba(16, 185, 129, 0.2)' : 
+                        approved === false ? 'rgba(239, 68, 68, 0.2)' : 
+                        'rgba(107, 114, 128, 0.2)',
+      color: approved === true ? '#10b981' : 
+             approved === false ? '#ef4444' : 
+             '#6b7280',
+      padding: isLarge ? '8px 16px' : '4px 12px',
+      borderRadius: '20px',
+      fontSize: isLarge ? '14px' : '12px',
+      fontWeight: '500',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      {approved === true ? 'Approved' : 
+       approved === false ? 'Rejected' : 
+       'Pending'}
+    </div>
+  );
+};
 
 export default function PostPage({ params }: { params: { id: string } }) {
   // Unwrap params using React.use()
