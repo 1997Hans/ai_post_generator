@@ -16,11 +16,11 @@ if (!fs.existsSync(uploadsDir)) {
 /**
  * Validates file based on type and size
  */
-export function validateFile(
+export async function validateFile(
   file: File,
   maxSizeInMB = 4,
   allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-): { valid: boolean; error?: string } {
+): Promise<{ valid: boolean; error?: string }> {
   // Check file type
   if (!allowedTypes.includes(file.type)) {
     return {
@@ -50,7 +50,7 @@ export async function saveUploadedFile(
 ): Promise<{ url: string; error?: string }> {
   try {
     // Validate file
-    const validation = validateFile(file);
+    const validation = await validateFile(file);
     if (!validation.valid) {
       return { url: '', error: validation.error };
     }

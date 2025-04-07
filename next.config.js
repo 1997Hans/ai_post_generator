@@ -4,10 +4,15 @@ const nextConfig = {
   env: {
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   },
-  // Enable experimental server actions (required for Next.js 15.2.4)
+  // Enable experimental server actions (required for Next.js 15)
   experimental: {
     serverActions: {
-      allowedOrigins: ["localhost:3000", "localhost:3001"],
+      allowedOrigins: [
+        "localhost:3000", 
+        "localhost:3001", 
+        "hanstech-post-generator.netlify.app",
+        ".netlify.app"
+      ],
     },
   },
 }
