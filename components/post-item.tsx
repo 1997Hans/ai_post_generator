@@ -3,9 +3,9 @@
 import { Post } from "@/lib/types";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
-import { AlertTriangle, Calendar, ExternalLink, ThumbsDown, ThumbsUp, Trash } from "lucide-react";
+import { AlertTriangle, Calendar, CheckCircle, ExternalLink, ThumbsDown, ThumbsUp, Trash, Wand2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { deletePost } from "@/app/actions/db-actions";
+import { approvePost, deletePost, rejectPost } from "@/app/actions/db-actions";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +18,7 @@ interface PostItemProps {
 
 export function PostItem({ post }: PostItemProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
   const [formattedDate, setFormattedDate] = useState<string | null>(null);
   
   const hashtags = Array.isArray(post.hashtags)
@@ -40,6 +41,26 @@ export function PostItem({ post }: PostItemProps) {
       console.error("Failed to delete post:", error);
       toast.error("Failed to delete post");
       setIsDeleting(false);
+    }
+  }
+
+  async function handleApprove() {
+    try {
+      setIsApproving(true);
+      const result = await approvePost(post.id);
+      
+      if (result.success) {
+        toast.success(post.approved ? "Post unapproved" : "Post approved");
+        window.location.reload();
+      } else {
+        console.error('Failed to approve post:', result.error);
+        toast.error("Failed to update approval status");
+      }
+    } catch (error) {
+      console.error('Error approving post:', error);
+      toast.error("An error occurred");
+    } finally {
+      setIsApproving(false);
     }
   }
 
@@ -94,10 +115,30 @@ export function PostItem({ post }: PostItemProps) {
         </CardContent>
       </Link>
       <CardFooter className="p-4 pt-2 border-t border-muted-foreground/10 flex justify-between">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <ThumbsUp className="mr-1 h-3 w-3" />
-          0 likes
+        <div className="flex items-center gap-2">
+          <Button 
+            variant={post.approved ? "outline" : "default"}
+            size="sm"
+            className={`text-xs ${post.approved ? "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50" : ""}`}
+            disabled={isApproving}
+            onClick={handleApprove}
+          >
+            <CheckCircle className="h-3 w-3 mr-1" />
+            {post.approved ? "Approved" : "Approve"}
+          </Button>
+          
+          <Link href={`/dashboard/${post.id}`}>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-xs"
+            >
+              <Wand2 className="h-3 w-3 mr-1 text-primary" />
+              Edit
+            </Button>
+          </Link>
         </div>
+        
         <div className="text-xs flex items-center gap-1 text-muted-foreground">
           <Link href={`/dashboard/${post.id}`} className="inline-flex items-center hover:text-primary transition-colors">
             View Details

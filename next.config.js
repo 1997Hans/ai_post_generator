@@ -6,7 +6,6 @@ const nextConfig = {
   },
   // Improve compatibility with Netlify
   reactStrictMode: true,
-  swcMinify: true,
   // Configure type checking for build
   typescript: {
     // Disable type checking in build to avoid deployment issues
@@ -21,9 +20,11 @@ const nextConfig = {
     domains: ['ai-post-generator.vercel.app'],
     formats: ['image/avif', 'image/webp'],
   },
-  // Enable experimental server actions but with more compatibility
+  // Enable experimental server actions
   experimental: {
-    serverActions: true,
+    serverActions: {
+      allowedOrigins: ['localhost:3000', 'ai-post-generator.vercel.app'],
+    }
   }
 }
 
