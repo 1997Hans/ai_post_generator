@@ -1,26 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Output static export for Netlify
+  output: 'export',
   // Make environment variables available to the client and server
   env: {
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   },
-  // Image domain configuration for Netlify
+  // Image configuration for static export
   images: {
-    domains: ['ai-social-post-generator.netlify.app'],
-    formats: ['image/avif', 'image/webp'],
+    unoptimized: true,
   },
-  // Enable experimental server actions (required for Next.js 15)
-  experimental: {
-    serverActions: {
-      allowedOrigins: [
-        "localhost:3000", 
-        "localhost:3001", 
-        "hanstech-post-generator.netlify.app",
-        "ai-social-post-generator.netlify.app",
-        ".netlify.app"
-      ],
-    },
-  },
+  // Disable server actions in static export
+  experimental: {},
 }
 
 module.exports = nextConfig 
