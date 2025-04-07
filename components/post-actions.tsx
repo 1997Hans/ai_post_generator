@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { toast } from "sonner";
-import { CheckCircle, ThumbsDown, Trash } from "lucide-react";
+import { CheckCircle, ThumbsDown, Trash, XCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,10 +14,12 @@ import {
   DialogTitle,
   DialogFooter,
   DialogTrigger,
+  DialogDescription,
 } from "./ui/dialog";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 interface PostActionsProps {
   post: Post;
@@ -29,7 +31,7 @@ export function PostActions({ post }: PostActionsProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
-  const [openReject, setOpenReject] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [feedback, setFeedback] = useState("");
   
   async function handleDelete() {
@@ -48,32 +50,34 @@ export function PostActions({ post }: PostActionsProps) {
   async function handleApprove() {
     try {
       setIsApproving(true);
-      await approvePost(post.id);
-      toast.success("Post approved successfully");
-      router.refresh();
+      const result = await approvePost(post.id);
+      
+      if (result.success) {
+        router.refresh();
+      } else {
+        console.error('Failed to approve post:', result.error);
+      }
     } catch (error) {
-      console.error("Failed to approve post:", error);
-      toast.error("Failed to approve post");
+      console.error('Error approving post:', error);
     } finally {
       setIsApproving(false);
     }
   }
   
-  async function handleRejectWithFeedback() {
-    if (!feedback.trim()) {
-      toast.error("Please provide feedback");
-      return;
-    }
-    
+  async function handleReject() {
     try {
       setIsRejecting(true);
-      await rejectPost(post.id, feedback);
-      toast.success("Post rejected with feedback");
-      setOpenReject(false);
-      router.push("/dashboard");
+      const result = await rejectPost(post.id, feedback);
+      
+      if (result.success) {
+        setShowRejectDialog(false);
+        router.refresh();
+      } else {
+        console.error('Failed to reject post:', result.error);
+      }
     } catch (error) {
-      console.error("Failed to reject post:", error);
-      toast.error("Failed to reject post");
+      console.error('Error rejecting post:', error);
+    } finally {
       setIsRejecting(false);
     }
   }
@@ -81,65 +85,55 @@ export function PostActions({ post }: PostActionsProps) {
   return (
     <div className="flex items-center gap-2">
       <Button
-        onClick={handleApprove}
-        disabled={isApproving || post.approved}
-        className="bg-green-600 hover:bg-green-700"
-      >
-        {isApproving ? (
-          <>
-            <Skeleton className="h-4 w-4 mr-2 rounded-full" />
-            Approving...
-          </>
-        ) : (
-          <>
-            <CheckCircle className="h-4 w-4 mr-2" />
-            {post.approved ? "Approved" : "Approve"}
-          </>
+        variant={post.approved ? "outline" : "default"}
+        className={cn(
+          "transition-all",
+          post.approved ? "bg-muted hover:bg-muted/80" : "bg-green-600 hover:bg-green-700 text-white"
         )}
+        disabled={isApproving}
+        onClick={handleApprove}
+      >
+        <CheckCircle className="h-4 w-4 mr-2" />
+        {post.approved ? "Unapprove" : "Approve"}
       </Button>
       
-      <Dialog open={openReject} onOpenChange={setOpenReject}>
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogTrigger asChild>
           <Button 
-            variant="outline" 
+            variant="destructive" 
             disabled={isRejecting}
-            className="border-amber-500 text-amber-500 hover:bg-amber-500/10 hover:text-amber-500"
           >
-            <ThumbsDown className="h-4 w-4 mr-2" />
+            <XCircle className="h-4 w-4 mr-2" />
             Reject
           </Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject Post with Feedback</DialogTitle>
+            <DialogTitle>Reject Post</DialogTitle>
+            <DialogDescription>
+              Provide feedback on why this post was rejected. This will help with future post generation.
+            </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="feedback">Feedback</Label>
-            <Textarea
-              id="feedback"
-              placeholder="Please provide feedback on why this post was rejected"
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              rows={4}
-            />
-          </div>
+          <Textarea
+            placeholder="Enter feedback on why this post was rejected..."
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            className="min-h-[100px]"
+          />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpenReject(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowRejectDialog(false)}
+              disabled={isRejecting}
+            >
               Cancel
             </Button>
             <Button 
               variant="destructive" 
-              onClick={handleRejectWithFeedback}
+              onClick={handleReject}
               disabled={isRejecting}
             >
-              {isRejecting ? (
-                <>
-                  <Skeleton className="h-4 w-4 mr-2 rounded-full" />
-                  Rejecting...
-                </>
-              ) : (
-                <>Reject Post</>
-              )}
+              {isRejecting ? "Rejecting..." : "Submit Rejection"}
             </Button>
           </DialogFooter>
         </DialogContent>

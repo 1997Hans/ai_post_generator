@@ -3,19 +3,36 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { Trash2, Edit, Eye, Sparkles, RefreshCw, Database } from 'lucide-react';
+import { Trash2, Edit, Eye, Sparkles, RefreshCw, Database, CheckCircle, XCircle } from 'lucide-react';
 import { Post } from '@/lib/types';
-import { deletePost as deleteDbPost } from '@/app/actions/db-actions';
+import { deletePost as deleteDbPost, approvePost, rejectPost } from '@/app/actions/db-actions';
 import { v4 as uuidv4 } from 'uuid';
+import { ApprovalStatusBadge } from '../approval/ApprovalStatusBadge';
+import { Button } from '../ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
+import { Textarea } from '../ui/textarea';
+import { RejectDialog } from './RejectDialog';
+import { formatDistanceToNow } from 'date-fns';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PostHistoryListProps {
   dbPosts?: Post[];
   isDbLoading?: boolean;
+  onStatusChange?: () => void;
 }
 
-export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHistoryListProps) {
+export function PostHistoryList({ 
+  dbPosts = [], 
+  isDbLoading = false,
+  onStatusChange 
+}: PostHistoryListProps) {
   const [normalizedDbPosts, setNormalizedDbPosts] = useState<Post[]>([]);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isApproving, setIsApproving] = useState<string | null>(null);
+  const [isRejecting, setIsRejecting] = useState<string | null>(null);
+  const [showRejectDialog, setShowRejectDialog] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState('');
+  const [localPostStates, setLocalPostStates] = useState<Record<string, { approved: boolean | null }>>({});
   
   // Normalize database posts to ensure all required fields are present
   useEffect(() => {
@@ -26,6 +43,13 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
         const timestamp = new Date().toISOString();
         
         // DB field mapping - ensure all fields exist with proper format
+        const localState = localPostStates[post.id];
+        
+        // If we have a local state for this post, use it, otherwise use the database value
+        const approved = localState ? localState.approved : post.approved === true;
+        
+        console.log(`[PostHistoryList] Post ${post.id}: DB approved=${post.approved}, local=${localState?.approved}, final=${approved}`);
+        
         return {
           id: post.id || uuidv4(),
           content: post.content || '',
@@ -36,7 +60,8 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
           tone: post.tone || '',
           visualStyle: post.visual_style || post.visualStyle || '',
           createdAt: post.created_at || post.createdAt || timestamp,
-          updatedAt: post.updated_at || post.updatedAt || timestamp
+          updatedAt: post.updated_at || post.updatedAt || timestamp,
+          approved: approved
         } as Post;
       });
       
@@ -45,7 +70,7 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
     } else {
       setNormalizedDbPosts([]);
     }
-  }, [dbPosts]);
+  }, [dbPosts, localPostStates]);
   
   // Function to handle post deletion
   const handleDelete = async (id: string) => {
@@ -67,6 +92,98 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
       alert('Failed to delete post: ' + error.message);
     } finally {
       setIsDeleting(null);
+    }
+  };
+  
+  // Function to handle post approval with improved UI feedback
+  const handleApprove = async (id: string) => {
+    try {
+      console.log(`[PostHistoryList] Approving post ${id}`);
+      setIsApproving(id);
+      
+      // Update local state immediately for responsive UI
+      setLocalPostStates(prev => ({
+        ...prev,
+        [id]: { approved: true }
+      }));
+      
+      // Update in database
+      const result = await approvePost(id);
+      console.log(`[PostHistoryList] Approval result:`, result);
+      
+      if (result.success) {
+        console.log(`[PostHistoryList] Post ${id} approved successfully`);
+        
+        // Call onStatusChange to refresh parent component
+        if (onStatusChange) {
+          onStatusChange();
+        }
+      } else {
+        console.error(`[PostHistoryList] Failed to approve post ${id}`);
+        // Revert local state on failure
+        setLocalPostStates(prev => ({
+          ...prev,
+          [id]: { approved: null }
+        }));
+      }
+    } catch (error) {
+      console.error(`[PostHistoryList] Error approving post ${id}:`, error);
+      // Revert local state on error
+      setLocalPostStates(prev => ({
+        ...prev,
+        [id]: { approved: null }
+      }));
+    } finally {
+      setIsApproving(null);
+    }
+  };
+  
+  // Function to handle post rejection with feedback and improved UI handling
+  const handleReject = async (id: string, feedbackText: string) => {
+    if (!feedbackText.trim()) {
+      alert('Please provide feedback for rejection');
+      return;
+    }
+    
+    try {
+      console.log(`[PostHistoryList] Rejecting post ${id} with feedback: ${feedbackText}`);
+      setIsRejecting(id);
+      setShowRejectDialog(null);
+      
+      // Update local state immediately for responsive UI
+      setLocalPostStates(prev => ({
+        ...prev,
+        [id]: { approved: false }
+      }));
+      
+      // Update in database
+      const result = await rejectPost(id, feedbackText);
+      console.log(`[PostHistoryList] Rejection result:`, result);
+      
+      if (result.success) {
+        console.log(`[PostHistoryList] Post ${id} rejected successfully`);
+        
+        // Call onStatusChange to refresh parent component
+        if (onStatusChange) {
+          onStatusChange();
+        }
+      } else {
+        console.error(`[PostHistoryList] Failed to reject post ${id}`);
+        // Revert local state on failure
+        setLocalPostStates(prev => ({
+          ...prev,
+          [id]: { approved: null }
+        }));
+      }
+    } catch (error) {
+      console.error(`[PostHistoryList] Error rejecting post ${id}:`, error);
+      // Revert local state on error
+      setLocalPostStates(prev => ({
+        ...prev,
+        [id]: { approved: null }
+      }));
+    } finally {
+      setIsRejecting(null);
     }
   };
   
@@ -289,9 +406,10 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
                     ? format(new Date(post.createdAt), 'MMM d, yyyy')
                     : 'No date available'}
                 </span>
-                <span>
-                  {post.tone || 'No tone'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span>{post.tone || 'No tone'}</span>
+                  <ApprovalStatusBadge approved={post.approved} />
+                </div>
               </div>
               
               <div style={{ 
@@ -301,6 +419,65 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
                 gap: "8px", 
                 marginTop: "16px" 
               }}>
+                {/* Social Media Manager Approval Actions */}
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginRight: "auto"
+                }}>
+                  <button
+                    onClick={() => handleApprove(post.id)}
+                    disabled={isApproving === post.id || post.approved === true}
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: "4px",
+                      backgroundColor: post.approved === true ? "rgba(74, 222, 128, 0.2)" : "rgba(74, 222, 128, 0.8)",
+                      border: "none",
+                      color: post.approved === true ? "rgba(74, 222, 128, 0.8)" : "white",
+                      fontSize: "12px",
+                      fontWeight: "500",
+                      cursor: isApproving === post.id ? "wait" : "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      opacity: isApproving === post.id ? 0.7 : 1,
+                      transition: "background-color 0.2s"
+                    }}
+                    title={post.approved ? "Post is approved" : "Approve this post"}
+                  >
+                    <CheckCircle size={12} />
+                    {post.approved ? "Approved" : "Approve"}
+                  </button>
+                  
+                  {/* Only show reject button if post is not approved */}
+                  {post.approved !== true && (
+                    <button
+                      onClick={() => setShowRejectDialog(post.id)}
+                      disabled={isRejecting === post.id}
+                      style={{
+                        padding: "6px 10px",
+                        borderRadius: "4px",
+                        backgroundColor: "rgba(239, 68, 68, 0.8)",
+                        border: "none",
+                        color: "white",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                        cursor: isRejecting === post.id ? "wait" : "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        opacity: isRejecting === post.id ? 0.7 : 1,
+                        transition: "background-color 0.2s"
+                      }}
+                      title="Reject this post with feedback"
+                    >
+                      <XCircle size={12} />
+                      Reject
+                    </button>
+                  )}
+                </div>
+                
                 <button
                   onClick={() => handleDelete(post.id)}
                   disabled={isDeleting === post.id}
@@ -385,6 +562,20 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
           </div>
         ))}
       </div>
+      
+      {/* Rejection Dialog */}
+      {showRejectDialog && (
+        <RejectDialog
+          isOpen={!!showRejectDialog}
+          onClose={() => setShowRejectDialog(null)}
+          onReject={(feedbackText) => {
+            if (showRejectDialog) {
+              handleReject(showRejectDialog, feedbackText);
+            }
+          }}
+          isSubmitting={!!isRejecting}
+        />
+      )}
     </div>
   );
 } 

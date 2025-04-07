@@ -46,7 +46,6 @@ export async function savePost(data: SavePostValues) {
 export const getAllPosts = unstable_cache(
   async (): Promise<Post[]> => {
     try {
-      // Use supabase for now to match existing implementation
       const { data, error } = await supabase
         .from('posts')
         .select('*')
@@ -56,13 +55,13 @@ export const getAllPosts = unstable_cache(
       
       return data || []
     } catch (error) {
-      console.error("Database error:", error);
-      return [];
+      console.error('Database error:', error)
+      return []
     }
   },
-  ['posts-list'],
-  { tags: ['posts'], revalidate: 60 } // Cache for 60 seconds
-);
+  ['all-posts'],
+  { revalidate: 10 } // Cache for 10 seconds
+)
 
 // Function to get posts with optional search query
 export async function getPosts(query?: string): Promise<Post[]> {
@@ -111,95 +110,143 @@ export async function getPost(postId: string) {
 
 export async function approvePost(postId: string) {
   try {
-    // Get current state to toggle
-    const { data: post, error: getError } = await supabase
+    console.log(`[DB Action] Approving post ${postId}`);
+    
+    // Update the post status and return the updated data
+    const { data, error } = await supabase
       .from('posts')
-      .select('approved')
+      .update({ approved: true })
       .eq('id', postId)
-      .single()
-    
-    if (getError) throw new Error(getError.message)
-    
-    // Toggle approved state
-    const { error } = await supabase
-      .from('posts')
-      .update({ approved: !post?.approved })
-      .eq('id', postId)
-    
-    if (error) throw new Error(error.message)
-    
-    revalidatePath('/')
-    revalidatePath('/dashboard')
-    revalidatePath(`/dashboard/${postId}`)
-    
-    return { success: true }
-  } catch (error) {
-    console.error('Error approving post:', error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+      .select()
+      .single();
+
+    if (error) {
+      console.error(`[DB Action] Error approving post ${postId}:`, error);
+      return {
+        success: false,
+        error: error.message,
+      };
     }
+    
+    console.log(`[DB Action] Post ${postId} approved successfully:`, data);
+    
+    // Invalidate all relevant paths to ensure fresh data
+    revalidatePath('/dashboard');
+    revalidatePath(`/post/${postId}`);
+    revalidatePath('/api/posts');
+
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error(`[DB Action] Unexpected error approving post ${postId}:`, error);
+    return {
+      success: false,
+      error: error.message,
+    };
   }
 }
 
 export async function rejectPost(postId: string, feedbackText: string) {
   try {
-    const feedbackId = uuidv4()
+    console.log(`[DB Action] Rejecting post ${postId} with feedback: ${feedbackText}`);
     
-    // Add feedback
+    // First, add feedback to the feedback table
+    const feedbackId = uuidv4();
     const { error: feedbackError } = await supabase
       .from('feedback')
-      .insert({
-        id: feedbackId,
-        post_id: postId,
-        feedback_text: feedbackText
-      })
-    
-    if (feedbackError) throw new Error(feedbackError.message)
-    
-    // Update the post to mark as not approved
-    const { error: updateError } = await supabase
-      .from('posts')
-      .update({ 
-        approved: false,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', postId)
-    
-    if (updateError) throw new Error(updateError.message)
-    
-    revalidatePath('/')
-    revalidatePath('/dashboard')
-    
-    return { success: true }
-  } catch (error) {
-    console.error('Error rejecting post:', error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+      .insert([
+        {
+          id: feedbackId,
+          post_id: postId,
+          feedback_text: feedbackText,
+        },
+      ]);
+
+    if (feedbackError) {
+      console.error(`[DB Action] Error adding feedback for post ${postId}:`, feedbackError);
+      return {
+        success: false,
+        error: feedbackError.message,
+      };
     }
+
+    // Then, update the post to mark it as rejected
+    const { data, error: postError } = await supabase
+      .from('posts')
+      .update({ approved: false })
+      .eq('id', postId)
+      .select()
+      .single();
+
+    if (postError) {
+      console.error(`[DB Action] Error rejecting post ${postId}:`, postError);
+      return {
+        success: false,
+        error: postError.message,
+      };
+    }
+    
+    console.log(`[DB Action] Post ${postId} rejected successfully:`, data);
+    
+    // Invalidate all relevant paths to ensure fresh data
+    revalidatePath('/dashboard');
+    revalidatePath(`/post/${postId}`);
+    revalidatePath('/api/posts');
+
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error(`[DB Action] Unexpected error rejecting post ${postId}:`, error);
+    return {
+      success: false,
+      error: error.message,
+    };
   }
 }
 
 export async function deletePost(postId: string) {
   try {
+    // First delete related feedback entries
+    const { error: feedbackError } = await supabase
+      .from('feedback')
+      .delete()
+      .eq('post_id', postId);
+      
+    if (feedbackError) {
+      console.error(`Error deleting feedback for post ${postId}:`, feedbackError);
+      // Continue anyway to try to delete the post
+    }
+    
+    // Then delete the post
     const { error } = await supabase
       .from('posts')
       .delete()
-      .eq('id', postId)
-    
-    if (error) throw new Error(error.message)
-    
-    revalidatePath('/')
-    revalidatePath('/dashboard')
-    
-    return { success: true }
-  } catch (error) {
-    console.error('Error deleting post:', error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+      .eq('id', postId);
+
+    if (error) {
+      console.error(`Error deleting post ${postId}:`, error);
+      return {
+        success: false,
+        error: error.message,
+      };
     }
+
+    revalidatePath('/dashboard');
+    revalidatePath('/');
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error(`Unexpected error deleting post ${postId}:`, error);
+    return {
+      success: false,
+      error: error.message,
+    };
   }
 }
 
@@ -231,5 +278,142 @@ export async function saveFeedback(postId: string, rating: number, comment: stri
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error occurred' 
     }
+  }
+}
+
+export async function updateFeedback(feedbackId: string, feedbackText: string) {
+  try {
+    const { error } = await supabase
+      .from('feedback')
+      .update({ feedback_text: feedbackText })
+      .eq('id', feedbackId)
+    
+    if (error) throw new Error(error.message)
+    
+    revalidatePath('/dashboard')
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Error updating feedback:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    }
+  }
+}
+
+export async function getFeedback(postId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('feedback')
+      .select('*')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: false })
+    
+    if (error) throw new Error(error.message)
+    
+    return { feedback: data, success: true }
+  } catch (error) {
+    console.error('Error getting feedback:', error)
+    return { 
+      success: false, 
+      feedback: null,
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    }
+  }
+}
+
+export async function addPostToHistory(
+  title: string,
+  content: string,
+  prompt: string,
+  refinedPrompt: string,
+  hashtags: string,
+  imageUrl: string
+) {
+  try {
+    const { data, error } = await supabase
+      .from('posts')
+      .insert([
+        {
+          id: uuidv4(),
+          title,
+          content,
+          prompt,
+          refined_prompt: refinedPrompt,
+          hashtags,
+          image_url: imageUrl,
+          approved: null,
+        },
+      ])
+      .select();
+
+    if (error) {
+      console.error('Error adding post to history:', error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+
+    revalidatePath('/dashboard');
+    revalidatePath('/');
+
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error('Unexpected error adding post to history:', error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
+export async function getPostById(id: string): Promise<Post | null> {
+  try {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*, feedback(id, feedback_text, created_at)')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error(`Error fetching post ${id}:`, error);
+      return null;
+    }
+
+    return data as Post;
+  } catch (error) {
+    console.error(`Unexpected error fetching post ${id}:`, error);
+    return null;
+  }
+}
+
+// Add a new function for the API endpoint that needs uncached data
+export async function getAllPostsUncached(): Promise<Post[]> {
+  try {
+    console.log('[DB Action] Fetching all posts (uncached)');
+    const { data: posts, error } = await supabase
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[DB Action] Error fetching posts:', error);
+      throw new Error(error.message);
+    }
+
+    // Log post approval states for debugging
+    posts?.forEach(post => {
+      console.log(`[DB Action] Post ${post.id}: approved=${post.approved}`);
+    });
+
+    return posts || [];
+  } catch (error) {
+    console.error('[DB Action] Unexpected error fetching posts:', error);
+    throw error;
   }
 } 

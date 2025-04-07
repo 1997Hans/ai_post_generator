@@ -22,6 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { StatusDisplay } from './StatusDisplay';
 
 interface PostItemProps {
   post: Post;
@@ -62,9 +63,24 @@ export function PostItem({ post }: PostItemProps) {
   async function handleApprovalToggle() {
     try {
       setIsApproving(true);
-      await approvePost(post.id);
-      setApproved(!approved);
-      toast.success(approved ? "Post unapproved" : "Post approved");
+      const result = await approvePost(post.id);
+      
+      if (result.success) {
+        // Update local state
+        const newApprovalState = !approved;
+        setApproved(newApprovalState);
+        toast.success(newApprovalState ? "Post approved" : "Post unapproved");
+        
+        // Force a refresh if we're approving to show updated UI
+        if (newApprovalState) {
+          // Wait a short moment to ensure toast is visible
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        }
+      } else {
+        toast.error("Failed to update post approval status");
+      }
     } catch (error) {
       console.error("Failed to update post approval:", error);
       toast.error("Failed to update post approval");
@@ -110,52 +126,54 @@ export function PostItem({ post }: PostItemProps) {
                 disabled={isApproving}
               />
             </div>
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="h-8 w-8 p-0 text-amber-500 border-amber-500/20 bg-amber-500/10 hover:bg-amber-500/20"
-                >
-                  <ThumbsDown className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-background/95 backdrop-blur-lg border-muted-foreground/20">
-                <DialogHeader>
-                  <DialogTitle>Reject Post with Feedback</DialogTitle>
-                </DialogHeader>
-                <div className="py-4">
-                  <Label htmlFor="feedback">Feedback</Label>
-                  <Textarea
-                    id="feedback"
-                    placeholder="Please provide feedback on why this post was rejected"
-                    value={feedback}
-                    onChange={(e) => setFeedback(e.target.value)}
-                    rows={4}
-                    className="bg-background/70 border-muted-foreground/20"
-                  />
-                </div>
-                <DialogFooter>
-                  <Button variant="ghost" onClick={() => setOpen(false)}>
-                    Cancel
-                  </Button>
+            {!approved && (
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
                   <Button 
-                    variant="destructive" 
-                    onClick={handleRejectWithFeedback}
-                    disabled={isRejecting}
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 w-8 p-0 text-amber-500 border-amber-500/20 bg-amber-500/10 hover:bg-amber-500/20"
                   >
-                    {isRejecting ? (
-                      <>
-                        <Skeleton className="h-4 w-4 mr-2 rounded-full" />
-                        Rejecting...
-                      </>
-                    ) : (
-                      <>Reject Post</>
-                    )}
+                    <ThumbsDown className="h-4 w-4" />
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent className="bg-background/95 backdrop-blur-lg border-muted-foreground/20">
+                  <DialogHeader>
+                    <DialogTitle>Reject Post with Feedback</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <Label htmlFor="feedback">Feedback</Label>
+                    <Textarea
+                      id="feedback"
+                      placeholder="Please provide feedback on why this post was rejected"
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value)}
+                      rows={4}
+                      className="bg-background/70 border-muted-foreground/20"
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleRejectWithFeedback}
+                      disabled={isRejecting}
+                    >
+                      {isRejecting ? (
+                        <>
+                          <Skeleton className="h-4 w-4 mr-2 rounded-full" />
+                          Rejecting...
+                        </>
+                      ) : (
+                        <>Reject Post</>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
             <Button 
               variant="ghost" 
               size="sm" 
@@ -175,16 +193,8 @@ export function PostItem({ post }: PostItemProps) {
       <Link href={`/dashboard/${post.id}`} className="flex-grow group">
         <CardContent className="p-4 pt-2 flex-grow relative">
           <div className="absolute top-2 right-2 z-10">
-            {approved ? (
-              <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-white">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Approved
-              </Badge>
-            ) : (
-              <Badge variant="destructive" className="bg-destructive/90">
-                <XCircle className="h-3 w-3 mr-1" />
-                Pending
-              </Badge>
+            {!approved && (
+              <StatusDisplay tone={post.tone} approved={approved} />
             )}
           </div>
           

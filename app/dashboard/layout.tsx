@@ -1,17 +1,16 @@
+import { ReactNode } from 'react';
 import { StarField } from "@/components/star-field";
-
-export const metadata = {
-  title: "Dashboard | Social Media Post Generator",
-  description: "Manage your social media posts"
-};
 
 export default function DashboardLayout({
   children
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-background">
+    <div style={{ 
+      minHeight: "100vh",
+      background: "linear-gradient(180deg, rgba(10, 8, 26, 0.8) 0%, rgba(10, 8, 26, 1) 100%)"
+    }}>
       <StarField />
       {children}
     </div>

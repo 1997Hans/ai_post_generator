@@ -8,6 +8,8 @@ import { formatDistanceToNow } from "date-fns";
 import { notFound } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { PostActions } from "@/components/post-actions";
+import { ApprovalStatusBadge } from "@/components/approval/ApprovalStatusBadge";
+import { FeedbackDialog } from "@/components/approval/FeedbackDialog";
 
 export default async function PostDetailPage({ params }: { params: { id: string } }) {
   const { post, success } = await getPost(params.id);
@@ -40,19 +42,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
           <Card className="mb-6">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Post Content</CardTitle>
-              <div>
-                {post.approved ? (
-                  <Badge variant="default" className="bg-green-600 hover:bg-green-700">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Approved
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive">
-                    <XCircle className="h-3 w-3 mr-1" />
-                    Pending
-                  </Badge>
-                )}
-              </div>
+              <ApprovalStatusBadge approved={post.approved} />
             </CardHeader>
             <CardContent>
               {post.image_url ? (
@@ -126,6 +116,12 @@ export default async function PostDetailPage({ params }: { params: { id: string 
                   <h3 className="text-sm font-medium mb-1">Visual Style</h3>
                   <p className="text-sm">{post.visual_style || "Not specified"}</p>
                 </div>
+              </div>
+              
+              <Separator className="my-4" />
+              
+              <div>
+                <FeedbackDialog postId={post.id} />
               </div>
             </CardContent>
           </Card>

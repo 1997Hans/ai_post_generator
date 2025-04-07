@@ -21,25 +21,23 @@ export const postOutputSchema = z.object({
 
 export type PostOutput = z.infer<typeof postOutputSchema>
 
-export const feedbackSchema = z.object({
-  feedback: z
-    .string()
-    .min(5, { message: 'Feedback must be at least 5 characters' })
-    .max(500, { message: 'Feedback must be less than 500 characters' }),
-  postId: z.string()
-})
-
-export type FeedbackValues = z.infer<typeof feedbackSchema>
-
-export const savePostSchema = z.object({
+export const SavePostSchema = z.object({
   postId: z.string().optional(),
-  content: z.string(),
-  imageUrl: z.string(),
-  hashtags: z.array(z.string()),
-  prompt: z.string(),
-  refinedPrompt: z.string().optional(),
-  tone: z.enum(['professional', 'casual', 'exciting', 'friendly', 'informative'] as const),
-  visualStyle: z.enum(['realistic', 'artistic', 'minimalist', 'vibrant', 'custom'] as const)
+  content: z.string().min(1, 'Content is required'),
+  imageUrl: z.string().optional().nullable(),
+  hashtags: z.string().or(z.array(z.string())).default(''),
+  prompt: z.string().min(1, 'Prompt is required'),
+  refinedPrompt: z.string().optional().nullable(),
+  tone: z.string().optional().nullable(),
+  visualStyle: z.string().optional().nullable(),
+  approved: z.boolean().optional().default(false)
 })
 
-export type SavePostValues = z.infer<typeof savePostSchema> 
+export const FeedbackSchema = z.object({
+  postId: z.string().min(1, 'Post ID is required'),
+  feedbackText: z.string().min(1, 'Feedback text is required'),
+  rating: z.number().min(1).max(5).optional()
+})
+
+export type SavePostValues = z.infer<typeof SavePostSchema>
+export type FeedbackValues = z.infer<typeof FeedbackSchema> 

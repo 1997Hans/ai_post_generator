@@ -2,31 +2,79 @@
 
 import { PostHistoryList } from '@/components/history/PostHistoryList';
 import Link from 'next/link';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Lightbulb, RefreshCw } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getAllPosts } from '@/app/actions/db-actions';
 import { Post } from '@/lib/types';
+import { ApprovalHelpTooltip } from '@/components/post/PostDetailHeader';
 
 export default function DashboardPage() {
   const [dbPosts, setDbPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   
-  // Fetch posts from database
+  // Function to refresh data
+  const refreshData = () => {
+    console.log('Manually refreshing data...');
+    setIsLoading(true);
+    setRefreshTrigger(prev => prev + 1);
+    setLastRefresh(new Date());
+  };
+  
+  // Fetch posts from database with direct fetch to bypass cache
   useEffect(() => {
     async function loadPostsFromDb() {
       try {
         console.log('Loading posts from database...');
-        const posts = await getAllPosts();
+        // Add timestamp parameter to prevent caching
+        const cacheBuster = `?timestamp=${Date.now()}`;
+        const response = await fetch(`/api/posts${cacheBuster}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+        
+        const posts = await response.json();
         console.log(`Loaded ${posts.length} posts from database`);
+        
+        // Log each post's approval status for debugging
+        posts.forEach(post => {
+          console.log(`Post ${post.id}: approved = ${post.approved}`);
+        });
+        
         setDbPosts(posts);
       } catch (error) {
         console.error('Failed to load posts from database:', error);
+        // Fallback to the regular getAllPosts function
+        try {
+          const posts = await getAllPosts();
+          setDbPosts(posts);
+        } catch (fallbackError) {
+          console.error('Fallback error:', fallbackError);
+        }
       } finally {
         setIsLoading(false);
       }
     }
     
     loadPostsFromDb();
+  }, [refreshTrigger]); // Add refreshTrigger as a dependency
+  
+  // Setup interval to periodically check for updates
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      console.log('Auto-refreshing posts data...');
+      refreshData();
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(intervalId);
   }, []);
   
   return (
@@ -57,30 +105,90 @@ export default function DashboardPage() {
           }}>Manage and track all your generated posts</p>
         </div>
         
-        <Link
-          href="/"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            backgroundColor: "#7c3aed",
-            color: "white",
-            padding: "10px 18px",
-            borderRadius: "8px",
-            fontSize: "14px",
-            fontWeight: "500",
-            transition: "background-color 0.2s",
-            textDecoration: "none"
-          }}
-        >
-          <PlusCircle size={16} style={{ marginRight: "8px" }} />
-          Create New Post
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <button 
+            onClick={refreshData}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              backgroundColor: "rgba(124, 58, 237, 0.1)",
+              color: "#7c3aed",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "14px"
+            }}
+          >
+            <RefreshCw size={14} 
+              className={isLoading ? "animate-spin" : ""} 
+            />
+            {isLoading ? "Refreshing..." : "Refresh"}
+          </button>
+          
+          <ApprovalHelpTooltip />
+          
+          <Link
+            href="/"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              backgroundColor: "#7c3aed",
+              color: "white",
+              padding: "10px 18px",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              transition: "background-color 0.2s",
+              textDecoration: "none"
+            }}
+          >
+            <PlusCircle size={16} style={{ marginRight: "8px" }} />
+            Create New Post
+          </Link>
+        </div>
+      </div>
+      
+      {/* Last refresh timestamp */}
+      <div style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        fontSize: "12px",
+        color: "#a7a3bc",
+        marginBottom: "8px"
+      }}>
+        Last refreshed: {lastRefresh.toLocaleTimeString()}
+      </div>
+      
+      {/* Social Media Manager Instructions */}
+      <div style={{
+        backgroundColor: "rgba(124, 58, 237, 0.1)",
+        border: "1px solid rgba(124, 58, 237, 0.2)",
+        borderRadius: "8px",
+        padding: "16px",
+        marginBottom: "24px",
+        display: "flex",
+        alignItems: "flex-start",
+        gap: "12px"
+      }}>
+        <Lightbulb style={{ color: "#7c3aed", marginTop: "2px" }} size={20} />
+        <div>
+          <h3 style={{ fontSize: "16px", fontWeight: "500", marginBottom: "8px" }}>
+            Social Media Manager Approval Guide
+          </h3>
+          <p style={{ fontSize: "14px", color: "#a7a3bc", lineHeight: "1.6" }}>
+            You can now approve or reject posts directly from this dashboard! Each post card below has <span style={{ color: "#4ade80" }}>Approve</span> and <span style={{ color: "#ef4444" }}>Reject</span> buttons to quickly review content. 
+            Click the eye icon on any post to view details and provide feedback when rejecting content.
+          </p>
+        </div>
       </div>
       
       <div style={{ flex: 1, position: "relative" }}>
         <PostHistoryList 
           dbPosts={dbPosts} 
-          isDbLoading={isLoading} 
+          isDbLoading={isLoading}
+          onStatusChange={refreshData}
         />
       </div>
 
