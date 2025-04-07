@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { Trash2, Edit, Eye, Sparkles, RefreshCw, Database, ToggleRight } from 'lucide-react';
+import { Trash2, Edit, Eye, Sparkles, RefreshCw, Database } from 'lucide-react';
 import { Post } from '@/lib/types';
-import { getPostHistory, deletePost, debugStorage } from '@/lib/storage';
 import { deletePost as deleteDbPost } from '@/app/actions/db-actions';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -15,11 +14,8 @@ interface PostHistoryListProps {
 }
 
 export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHistoryListProps) {
-  const [localPosts, setLocalPosts] = useState<Post[]>([]);
-  const [isLocalLoading, setIsLocalLoading] = useState(true);
-  const [displaySource, setDisplaySource] = useState<'local' | 'database'>('database');
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [normalizedDbPosts, setNormalizedDbPosts] = useState<Post[]>([]);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   
   // Normalize database posts to ensure all required fields are present
   useEffect(() => {
@@ -44,117 +40,28 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
         } as Post;
       });
       
-      console.log('Normalized DB posts:', normalized.length);
+      console.log(`Loaded ${normalized.length} posts from database`);
       setNormalizedDbPosts(normalized);
     } else {
       setNormalizedDbPosts([]);
     }
   }, [dbPosts]);
   
-  // Load localStorage posts
-  const loadLocalPosts = () => {
-    try {
-      console.log('🚀 Loading posts from localStorage...');
-      
-      // Debug the localStorage state
-      debugStorage();
-      
-      // Get fresh data from localStorage
-      const history = getPostHistory();
-      console.log('✅ Loaded posts from storage:', history.posts.length);
-      
-      if (history.posts.length > 0) {
-        // Show the first post for debugging
-        console.log('📝 First post:', history.posts[0].id, history.posts[0].prompt);
-      } else {
-        console.log('⚠️ No posts found in localStorage');
-      }
-      
-      setLocalPosts(history.posts);
-    } catch (error) {
-      console.error('❌ Failed to load posts:', error);
-    } finally {
-      setIsLocalLoading(false);
-    }
-  };
-  
-  // Function to log storage events for debugging
-  const logStorageEvent = (event: StorageEvent | CustomEvent) => {
-    if (event instanceof StorageEvent) {
-      console.log('📢 Storage event:', event.key, event.newValue);
-    } else if (event instanceof CustomEvent) {
-      console.log('📢 Custom event:', event.type, event.detail);
-    }
-  };
-  
-  useEffect(() => {
-    // Add browser info for debugging
-    console.log('🌐 Browser:', navigator.userAgent);
-    console.log('💾 localStorage available:', typeof window !== 'undefined' && !!window.localStorage);
-    
-    // Initial load
-    loadLocalPosts();
-    
-    // Set up event listeners for storage changes
-    const handleStorageChange = (event: StorageEvent) => {
-      console.log('🔄 Storage changed, reloading posts');
-      logStorageEvent(event);
-      loadLocalPosts();
-    };
-    
-    const handleCustomEvent = (event: Event) => {
-      console.log('🔄 Custom event triggered, reloading posts');
-      if (event instanceof CustomEvent) {
-        logStorageEvent(event);
-      }
-      loadLocalPosts();
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('postUpdated', handleCustomEvent);
-    
-    // Debug - check periodically for changes
-    const intervalId = setInterval(() => {
-      console.log('⏱️ Checking for posts periodically...');
-      loadLocalPosts();
-    }, 10000); // Check every 10 seconds
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('postUpdated', handleCustomEvent);
-      clearInterval(intervalId);
-    };
-  }, []);
-  
-  // Detect when dbPosts change
-  useEffect(() => {
-    if (dbPosts.length > 0) {
-      console.log(`📊 Received ${dbPosts.length} posts from database`);
-    }
-  }, [dbPosts]);
-  
   // Function to handle post deletion
-  const handleDelete = async (id: string, source: 'local' | 'database') => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this post?')) return;
     
     setIsDeleting(id);
     
     try {
-      if (source === 'local') {
-        // Delete from localStorage
-        deletePost(id);
-        // Force immediate UI update
-        setLocalPosts(prevPosts => prevPosts.filter(post => post.id !== id));
-      } else {
-        // Delete from database
-        const result = await deleteDbPost(id);
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to delete post from database');
-        }
-        
-        // Force reload window after database deletion
-        window.location.reload();
+      // Delete from database
+      const result = await deleteDbPost(id);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to delete post from database');
       }
+      
+      // Force reload window after database deletion
+      window.location.reload();
     } catch (error) {
       console.error('Failed to delete post:', error);
       alert('Failed to delete post: ' + error.message);
@@ -163,53 +70,7 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
     }
   };
   
-  // For development: Add a test post on demand
-  const addDemoPost = () => {
-    try {
-      console.log('📝 Adding demo post to localStorage...');
-      
-      // Generate a test post for development purposes
-      const testPost: Post = {
-        id: 'demo-post-' + Date.now(),
-        prompt: 'Demo social media post',
-        content: 'This is a sample social media post showing how our dashboard displays generated content. You can edit, view or delete this post using the buttons below.',
-        hashtags: ['demo', 'socialmedia', 'content', 'ai'],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        tone: 'Professional',
-        visualStyle: 'Modern'
-      };
-      
-      // Save directly to localStorage
-      const history = getPostHistory();
-      history.posts.unshift(testPost);
-      localStorage.setItem('post-generator-history', JSON.stringify(history));
-      console.log('✅ Added demo post to localStorage');
-      
-      // Verify the post was saved
-      setTimeout(() => {
-        debugStorage();
-        // Trigger reload
-        loadLocalPosts();
-      }, 500);
-    } catch (error) {
-      console.error('❌ Failed to add demo post:', error);
-    }
-  };
-
-  // Toggle between database and localStorage
-  const toggleDisplaySource = () => {
-    setDisplaySource(prev => prev === 'local' ? 'database' : 'local');
-  };
-  
-  // Show loading state if either source is loading
-  const isLoading = (displaySource === 'local' && isLocalLoading) || 
-                    (displaySource === 'database' && isDbLoading);
-  
-  // Get the appropriate posts array based on chosen source
-  const posts = displaySource === 'local' ? localPosts : normalizedDbPosts;
-  
-  if (isLoading) {
+  if (isDbLoading) {
     return (
       <div style={{ 
         display: "flex", 
@@ -237,7 +98,7 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
     );
   }
   
-  if (posts.length === 0) {
+  if (normalizedDbPosts.length === 0) {
     return (
       <div style={{
         display: "flex",
@@ -264,66 +125,23 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
         </div>
         
         <p style={{ color: "#a7a3bc", fontSize: "18px", marginBottom: "16px" }}>
-          {displaySource === 'database' 
-            ? "No posts found in database" 
-            : "No post history yet in localStorage"}
+          No posts found in database
         </p>
         
-        <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
-          <Link 
-            href="/" 
-            style={{
-              backgroundColor: "#7c3aed",
-              color: "white",
-              padding: "8px 16px",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              textDecoration: "none"
-            }}
-          >
-            Create your first post
-          </Link>
-          
-          <button
-            onClick={addDemoPost}
-            style={{
-              backgroundColor: "transparent",
-              color: "#7c3aed",
-              border: "1px solid #7c3aed",
-              padding: "8px 16px",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: "pointer"
-            }}
-          >
-            Add Demo Post
-          </button>
-        </div>
-
-        {/* Data source toggle */}
-        <button
-          onClick={toggleDisplaySource}
+        <Link 
+          href="/" 
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            backgroundColor: "rgba(124, 58, 237, 0.1)",
-            color: "#7c3aed",
-            border: "none",
+            backgroundColor: "#7c3aed",
+            color: "white",
             padding: "8px 16px",
             borderRadius: "8px",
             fontSize: "14px",
             fontWeight: "500",
-            cursor: "pointer"
+            textDecoration: "none"
           }}
         >
-          <ToggleRight size={16} />
-          {displaySource === 'database' 
-            ? "Switch to localStorage" 
-            : "Switch to Database"}
-        </button>
+          Create your first post
+        </Link>
       </div>
     );
   }
@@ -342,7 +160,7 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
           gap: "12px"
         }}>
           <h2 style={{ fontSize: "24px", fontWeight: "600" }}>
-            Your Post History ({posts.length})
+            Your Post History ({normalizedDbPosts.length})
           </h2>
           
           <div style={{
@@ -355,46 +173,13 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
             borderRadius: "4px",
             fontSize: "12px"
           }}>
-            {displaySource === 'database' ? (
-              <>
-                <Database size={12} />
-                Database
-              </>
-            ) : (
-              <>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 2L2 22" />
-                  <path d="M17 2H22V7" />
-                  <path d="M2 17V22H7" />
-                  <path d="M18 14C18 15.6569 16.6569 17 15 17C13.3431 17 12 15.6569 12 14C12 12.3431 13.3431 11 15 11C16.6569 11 18 12.3431 18 14Z" />
-                  <path d="M18 22L15 17" />
-                  <path d="M6 3L9 8" />
-                </svg>
-                localStorage
-              </>
-            )}
+            <Database size={12} />
+            Database
           </div>
-          
-          <button
-            onClick={toggleDisplaySource}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              backgroundColor: "transparent",
-              border: "none",
-              color: "#7c3aed",
-              fontSize: "12px",
-              cursor: "pointer",
-            }}
-          >
-            <ToggleRight size={14} />
-            Switch
-          </button>
         </div>
         
         <button
-          onClick={displaySource === 'local' ? loadLocalPosts : () => window.location.reload()}
+          onClick={() => window.location.reload()}
           style={{
             display: "flex",
             alignItems: "center",
@@ -416,7 +201,7 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
         gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", 
         gap: "16px" 
       }}>
-        {posts.map((post) => (
+        {normalizedDbPosts.map((post) => (
           <div 
             key={post.id}
             style={{
@@ -517,7 +302,7 @@ export function PostHistoryList({ dbPosts = [], isDbLoading = false }: PostHisto
                 marginTop: "16px" 
               }}>
                 <button
-                  onClick={() => handleDelete(post.id, displaySource)}
+                  onClick={() => handleDelete(post.id)}
                   disabled={isDeleting === post.id}
                   style={{
                     borderRadius: "50%",

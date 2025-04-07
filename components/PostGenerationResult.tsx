@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { savePost, debugStorage } from '@/lib/storage';
 import { Post, PostOutput, PostRequestInput } from '@/lib/types';
 import { PostPreview } from './PostPreview';
 import { ExportOptions } from './export/ExportOptions';
 import { Check, Save, Loader2, RefreshCw } from 'lucide-react';
 import { saveGeneratedPost } from '@/app/actions/saveGeneratedPost';
+import { savePost } from '@/app/actions/db-actions';
 import { v4 as uuidv4 } from 'uuid';
 
 interface PostGenerationResultProps {
@@ -49,7 +49,7 @@ export function PostGenerationResult({
     convertToPost();
   }, [result, request]);
   
-  const handleSavePost = () => {
+  const handleSavePost = async () => {
     if (!post) {
       console.error('Cannot save: post is null');
       setSaveError('Cannot save: post data is missing');
@@ -60,44 +60,39 @@ export function PostGenerationResult({
     setSaveError(null);
     
     try {
-      console.log('Saving post to localStorage:', post);
+      console.log('Saving post to database:', post);
       
       // Make sure we have a proper post object with all required fields
-      const completePost: Post = {
-        ...post,
-        id: post.id || uuidv4(),
-        createdAt: post.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      const completePost = {
+        postId: post.id,
+        content: post.content,
+        imageUrl: post.imageUrl || '',
         hashtags: Array.isArray(post.hashtags) ? post.hashtags : [],
         prompt: post.prompt || request.prompt || 'Untitled Post',
-        content: post.content || result.content || ''
+        refinedPrompt: post.refinedPrompt || null,
+        tone: post.tone || '',
+        visualStyle: post.visualStyle || ''
       };
       
-      // Save to localStorage
-      savePost(completePost);
+      // Save to database
+      const result = await savePost(completePost);
       
-      // Create a custom event to notify other components
-      const customEvent = new CustomEvent('postUpdated', { 
-        detail: { postId: completePost.id, action: 'save' } 
-      });
-      window.dispatchEvent(customEvent);
+      if (!result.success) {
+        throw new Error(result.error || 'Unknown error occurred while saving post');
+      }
       
-      // Verify the save was successful
+      console.log('Post saved successfully to database:', result.postId);
+      
+      setIsSaved(true);
+      setIsSaving(false);
+      
+      // Wait a moment before redirecting
       setTimeout(() => {
-        // Debug localStorage to check current state
-        debugStorage();
-        
-        setIsSaved(true);
-        setIsSaving(false);
-        
-        // Wait a moment before redirecting
-        setTimeout(() => {
-          router.push(`/post/${completePost.id}`);
-        }, 1000);
-      }, 500);
+        router.push(`/post/${result.postId}`);
+      }, 1000);
     } catch (error) {
       console.error('Error saving post:', error);
-      setSaveError('Failed to save post. Please try again.');
+      setSaveError('Failed to save post: ' + (error.message || 'Unknown error'));
       setIsSaving(false);
     }
   };
