@@ -24,7 +24,7 @@ export async function savePost(data: SavePostValues) {
       visual_style: data.visualStyle,
       updated_at: timestamp,
       created_at: timestamp,
-      approved: false
+      approved: null
     })
 
     if (error) throw new Error(error.message)
@@ -109,10 +109,9 @@ export async function getPost(postId: string) {
 }
 
 export async function approvePost(postId: string) {
+  console.log(`[DB Action] Approving post ${postId}`);
   try {
-    console.log(`[DB Action] Approving post ${postId}`);
-    
-    // Update the post status and return the updated data
+    // Update the post in the database
     const { data, error } = await supabase
       .from('posts')
       .update({ approved: true })
@@ -127,31 +126,40 @@ export async function approvePost(postId: string) {
         error: error.message,
       };
     }
-    
-    console.log(`[DB Action] Post ${postId} approved successfully:`, data);
-    
-    // Invalidate all relevant paths to ensure fresh data
+
+    // Log the data we got back from the database
+    console.log(`[DB Action] Post ${postId} approve response data:`, data);
+
+    // Verify the update was successful - handle both string 'true' and boolean true
+    if (!data || (data.approved !== true && data.approved !== 'true')) {
+      console.error(`[DB Action] Post ${postId} approval verification failed, data:`, data);
+      return {
+        success: false,
+        error: 'Post approval did not persist in database',
+      };
+    }
+
+    // Revalidate paths to update the UI
     revalidatePath('/dashboard');
+    revalidatePath('/post');
     revalidatePath(`/post/${postId}`);
-    revalidatePath('/api/posts');
 
     return {
       success: true,
-      data,
+      post: data,
     };
   } catch (error) {
     console.error(`[DB Action] Unexpected error approving post ${postId}:`, error);
     return {
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
 
 export async function rejectPost(postId: string, feedbackText: string) {
+  console.log(`[DB Action] Rejecting post ${postId} with feedback: ${feedbackText}`);
   try {
-    console.log(`[DB Action] Rejecting post ${postId} with feedback: ${feedbackText}`);
-    
     // First, add feedback to the feedback table
     const feedbackId = uuidv4();
     const { error: feedbackError } = await supabase
@@ -172,38 +180,48 @@ export async function rejectPost(postId: string, feedbackText: string) {
       };
     }
 
-    // Then, update the post to mark it as rejected
-    const { data, error: postError } = await supabase
+    // Update the post in the database
+    const { data, error } = await supabase
       .from('posts')
       .update({ approved: false })
       .eq('id', postId)
       .select()
       .single();
 
-    if (postError) {
-      console.error(`[DB Action] Error rejecting post ${postId}:`, postError);
+    if (error) {
+      console.error(`[DB Action] Error rejecting post ${postId}:`, error);
       return {
         success: false,
-        error: postError.message,
+        error: error.message,
       };
     }
-    
-    console.log(`[DB Action] Post ${postId} rejected successfully:`, data);
-    
-    // Invalidate all relevant paths to ensure fresh data
+
+    // Log the data we got back from the database
+    console.log(`[DB Action] Post ${postId} reject response data:`, data);
+
+    // Verify the update was successful - handle both string 'false' and boolean false
+    if (!data || (data.approved !== false && data.approved !== 'false')) {
+      console.error(`[DB Action] Post ${postId} rejection verification failed, data:`, data);
+      return {
+        success: false,
+        error: 'Post rejection did not persist in database',
+      };
+    }
+
+    // Revalidate paths to update the UI
     revalidatePath('/dashboard');
+    revalidatePath('/post');
     revalidatePath(`/post/${postId}`);
-    revalidatePath('/api/posts');
 
     return {
       success: true,
-      data,
+      post: data,
     };
   } catch (error) {
     console.error(`[DB Action] Unexpected error rejecting post ${postId}:`, error);
     return {
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }

@@ -1,8 +1,9 @@
 'use client';
 
+import React from 'react';
 import { PostHistoryList } from '@/components/history/PostHistoryList';
 import Link from 'next/link';
-import { PlusCircle, Lightbulb, RefreshCw } from 'lucide-react';
+import { PlusCircle, Lightbulb, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getAllPosts } from '@/app/actions/db-actions';
 import { Post } from '@/lib/types';
@@ -13,22 +14,24 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [showRefreshAlert, setShowRefreshAlert] = useState(false);
   
-  // Function to refresh data
+  // Function to refresh data from database
   const refreshData = () => {
-    console.log('Manually refreshing data...');
+    console.log('Refreshing data from database...');
     setIsLoading(true);
     setRefreshTrigger(prev => prev + 1);
     setLastRefresh(new Date());
+    setShowRefreshAlert(false);
   };
   
-  // Add a direct refresh method that bypasses all caches
+  // Function to force refresh with no caching
   const forceRefreshData = async () => {
     try {
       console.log('Force refreshing data with no cache...');
       setIsLoading(true);
       
-      // Add a unique timestamp to completely avoid any caching
+      // Use a timestamp to avoid any caching
       const timestamp = Date.now();
       const response = await fetch(`/api/posts?nocache=${timestamp}`, {
         cache: 'no-store',
@@ -47,26 +50,27 @@ export default function DashboardPage() {
       const posts = await response.json();
       console.log(`Force-loaded ${posts.length} posts from database:`, posts);
       
-      // Log each post's approval status for debugging
+      // Log each post's approval status
       posts.forEach(post => {
         console.log(`[Dashboard] Post ${post.id}: approved=${post.approved}, Type: ${typeof post.approved}`);
       });
       
       setDbPosts(posts);
       setLastRefresh(new Date());
+      setShowRefreshAlert(false);
     } catch (error) {
       console.error('Failed to force-refresh posts:', error);
+      alert('Failed to refresh posts. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
   
-  // Fetch posts from database with direct fetch to bypass cache
+  // Fetch posts from database on initial load and when triggered
   useEffect(() => {
     async function loadPostsFromDb() {
       try {
         console.log('Loading posts from database...');
-        // Add timestamp parameter to prevent caching
         const cacheBuster = `?timestamp=${Date.now()}`;
         const response = await fetch(`/api/posts${cacheBuster}`, {
           cache: 'no-store',
@@ -82,17 +86,11 @@ export default function DashboardPage() {
         
         const posts = await response.json();
         console.log(`Loaded ${posts.length} posts from database`);
-        
-        // Log each post's approval status for debugging
-        posts.forEach(post => {
-          console.log(`Post ${post.id}: approved = ${post.approved}`);
-        });
-        
         setDbPosts(posts);
       } catch (error) {
         console.error('Failed to load posts from database:', error);
-        // Fallback to the regular getAllPosts function
         try {
+          // Fallback to regular function if API fails
           const posts = await getAllPosts();
           setDbPosts(posts);
         } catch (fallbackError) {
@@ -104,8 +102,13 @@ export default function DashboardPage() {
     }
     
     loadPostsFromDb();
-  }, [refreshTrigger]); // Only refresh when manually triggered
+  }, [refreshTrigger]);
   
+  // Function to notify user about potential database changes
+  const showRefreshReminder = () => {
+    setShowRefreshAlert(true);
+  };
+
   return (
     <div style={{ 
       padding: "48px 24px", 
@@ -153,7 +156,7 @@ export default function DashboardPage() {
             <RefreshCw size={14} 
               className={isLoading ? "animate-spin" : ""} 
             />
-            {isLoading ? "Refreshing..." : "Manual Refresh"}
+            {isLoading ? "Refreshing..." : "Refresh from Database"}
           </button>
           
           <button 
@@ -174,7 +177,7 @@ export default function DashboardPage() {
             <RefreshCw size={14} 
               className={isLoading ? "animate-spin" : ""} 
             />
-            Force Refresh
+            Force Reload
           </button>
           
           <ApprovalHelpTooltip />
@@ -200,6 +203,40 @@ export default function DashboardPage() {
         </div>
       </div>
       
+      {/* Refresh alert when database changes might have occurred */}
+      {showRefreshAlert && (
+        <div style={{
+          backgroundColor: "rgba(74, 222, 128, 0.1)",
+          border: "1px solid rgba(74, 222, 128, 0.2)",
+          borderRadius: "8px",
+          padding: "12px 16px",
+          marginBottom: "16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "12px"
+        }}>
+          <CheckCircle size={16} style={{ color: "#10b981" }} />
+          <p style={{ fontSize: "14px", color: "#10b981", margin: 0 }}>
+            Status change saved successfully! The post status will remain the same even if you close or refresh the app.
+          </p>
+          <button
+            onClick={() => setShowRefreshAlert(false)}
+            style={{
+              marginLeft: "auto",
+              padding: "6px 12px",
+              backgroundColor: "transparent",
+              color: "#10b981",
+              border: "1px solid #10b981",
+              borderRadius: "4px",
+              fontSize: "12px",
+              cursor: "pointer"
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      
       {/* Last refresh timestamp */}
       <div style={{
         display: "flex",
@@ -210,8 +247,8 @@ export default function DashboardPage() {
         marginBottom: "8px",
         gap: "8px"
       }}>
-        <span>Last data loaded: {lastRefresh.toLocaleTimeString()}</span>
-        <span style={{ color: "#7c3aed", cursor: "help" }} title="Posts are only loaded once when you open the page. Use the refresh buttons to manually check for updates.">ⓘ</span>
+        <span>Last database sync: {lastRefresh.toLocaleTimeString()}</span>
+        <span style={{ color: "#7c3aed", cursor: "help" }} title="The dashboard always shows data from the database. Refresh to see the latest changes.">ⓘ</span>
       </div>
       
       {/* Social Media Manager Instructions */}
@@ -231,10 +268,10 @@ export default function DashboardPage() {
             Social Media Manager Approval Guide
           </h3>
           <p style={{ fontSize: "14px", color: "#a7a3bc", lineHeight: "1.6" }}>
-            You can now approve or reject posts directly from this dashboard! Each post card below has <span style={{ color: "#4ade80" }}>Approve</span> and <span style={{ color: "#ef4444" }}>Reject</span> buttons to quickly review content. 
+            You can now approve or reject posts directly from this dashboard! Each post card has <span style={{ color: "#4ade80" }}>Approve</span> and <span style={{ color: "#ef4444" }}>Reject</span> buttons to quickly review content. 
             Click the eye icon on any post to view details and provide feedback when rejecting content.
             <br/><br/>
-            <strong style={{ color: "#7c3aed" }}>Note:</strong> Changes are saved immediately, but the dashboard won't automatically refresh. Use the "Manual Refresh" button to see updates from other team members.
+            <strong style={{ color: "#7c3aed" }}>Important:</strong> All post statuses are stored in the database. When you approve or reject a post, you'll need to click "Refresh from Database" to ensure you're seeing the latest data.
           </p>
         </div>
       </div>
@@ -243,7 +280,11 @@ export default function DashboardPage() {
         <PostHistoryList 
           dbPosts={dbPosts} 
           isDbLoading={isLoading}
-          onStatusChange={refreshData}
+          onStatusChange={() => {
+            // Show alert to remind user to refresh without automatic refresh
+            showRefreshReminder();
+            // NO AUTOMATIC REFRESH - removed the setTimeout call
+          }}
         />
       </div>
 

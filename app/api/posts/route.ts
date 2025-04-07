@@ -14,10 +14,19 @@ export async function GET(request: NextRequest) {
     posts.forEach(post => {
       console.log(`[API] Post ${post.id}: approved=${post.approved}, Type: ${typeof post.approved}, Value: ${JSON.stringify(post.approved)}`);
       
-      // Ensure post.approved is a proper boolean value
-      if (post.approved !== true && post.approved !== false && post.approved !== null) {
-        console.warn(`[API] Post ${post.id} has an invalid approved value: ${post.approved}, forcing to null`);
+      // Properly handle different representations of approved values
+      if (post.approved === true || post.approved === 'true') {
+        // Convert to proper boolean true
+        post.approved = true;
+        console.log(`[API] Post ${post.id} is APPROVED`);
+      } else if (post.approved === false || post.approved === 'false') {
+        // Convert to proper boolean false
+        post.approved = false;
+        console.log(`[API] Post ${post.id} is REJECTED`);
+      } else {
+        // Keep as null for pending state
         post.approved = null;
+        console.log(`[API] Post ${post.id} is PENDING`);
       }
     });
     

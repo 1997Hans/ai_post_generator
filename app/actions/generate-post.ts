@@ -40,7 +40,7 @@ export async function generateExamplePost(options: GeneratePostOptions = {}) {
       visual_style: visualStyle,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      approved: false
+      approved: null
     });
 
     if (error) {

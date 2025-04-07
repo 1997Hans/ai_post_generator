@@ -44,11 +44,16 @@ export default function PostPage({ params }: { params: { id: string } }) {
           visualStyle: response.post.visual_style || '',
           createdAt: response.post.created_at || new Date().toISOString(),
           updatedAt: response.post.updated_at || new Date().toISOString(),
-          // Convert to boolean in case it's null or another value
-          approved: response.post.approved === true
+          // Handle both string and boolean representations of approval status
+          approved: response.post.approved === true || response.post.approved === 'true' 
+            ? true 
+            : response.post.approved === false || response.post.approved === 'false'
+              ? false
+              : null
         };
         
         console.log('Normalized post data:', normalizedPost);
+        console.log('Approval status:', normalizedPost.approved, 'Type:', typeof normalizedPost.approved);
         setPost(normalizedPost);
       } else {
         setError(response.error || 'Post not found');
@@ -108,11 +113,20 @@ export default function PostPage({ params }: { params: { id: string } }) {
     
     try {
       setIsSubmitting(true);
+      console.log('Rejecting post:', post.id);
       const result = await rejectPost(post.id, rejectionFeedback);
+      console.log('Rejection result:', result);
       
       if (result.success) {
-        // Update local state
-        setPost(prev => prev ? {...prev, approved: false} : null);
+        // Update local state immediately
+        setPost(prev => {
+          console.log('Updating state from:', prev?.approved, 'to: false');
+          return prev ? {...prev, approved: false} : null;
+        });
+        
+        // Also refetch to ensure we have the latest data from the server
+        fetchPost();
+        
         setShowRejectModal(false);
         toast.success("Post rejected successfully");
       } else {
@@ -120,6 +134,7 @@ export default function PostPage({ params }: { params: { id: string } }) {
       }
     } catch (err) {
       toast.error("An error occurred while rejecting the post");
+      console.error(err);
     } finally {
       setIsSubmitting(false);
     }

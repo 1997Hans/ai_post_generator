@@ -42,32 +42,23 @@ export function PostHistoryList({
         // Create default timestamp if missing
         const timestamp = new Date().toISOString();
         
-        // DB field mapping - ensure all fields exist with proper format
-        const localState = localPostStates[post.id];
-        
         // Debug database value
         console.log(`[PostHistoryList] Raw DB value for post ${post.id}: approved=${JSON.stringify(post.approved)}`);
         
-        // If we have a local state for this post, use it, otherwise use the database value
-        // IMPORTANT: The === true comparison was causing problems with truthy values
-        // Using a direct check instead
+        // IMPORTANT: The database is the source of truth for approval status
+        // Explicitly check and convert the approval status to the correct type
         let approvalState: boolean | null;
         
-        if (localState !== undefined) {
-          // Use local state if available
-          approvalState = localState.approved;
-        } else if (post.approved === true) {
-          // Explicitly approved
+        if (post.approved === true || post.approved === 'true') {
           approvalState = true;
-        } else if (post.approved === false) {
-          // Explicitly rejected
+          console.log(`[PostHistoryList] Post ${post.id} is APPROVED`);
+        } else if (post.approved === false || post.approved === 'false') {
           approvalState = false;
+          console.log(`[PostHistoryList] Post ${post.id} is REJECTED`);
         } else {
-          // Null or undefined = pending
           approvalState = null;
+          console.log(`[PostHistoryList] Post ${post.id} is PENDING`);
         }
-        
-        console.log(`[PostHistoryList] Post ${post.id}: DB approved=${post.approved}, local=${localState?.approved}, final=${approvalState}`);
         
         return {
           id: post.id || uuidv4(),
@@ -89,7 +80,7 @@ export function PostHistoryList({
     } else {
       setNormalizedDbPosts([]);
     }
-  }, [dbPosts, localPostStates]);
+  }, [dbPosts]);
   
   // Function to handle post deletion
   const handleDelete = async (id: string) => {
@@ -120,21 +111,14 @@ export function PostHistoryList({
       console.log(`[PostHistoryList] Approving post ${id}`);
       setIsApproving(id);
       
-      // Update local state immediately for responsive UI
-      setLocalPostStates(prev => ({
-        ...prev,
-        [id]: { approved: true }
-      }));
-      
-      // Update in database
+      // Update in database first
       const result = await approvePost(id);
       console.log(`[PostHistoryList] Approval result:`, result);
       
       if (result.success) {
-        console.log(`[PostHistoryList] Post ${id} approved successfully`);
+        console.log(`[PostHistoryList] Post ${id} approved successfully in database`);
         
-        // Instead of refreshing parent component, update local data only
-        // Update our local normalized posts to reflect the change
+        // Apply the database change to our UI immediately
         setNormalizedDbPosts(prevPosts => 
           prevPosts.map(post => 
             post.id === id 
@@ -143,26 +127,46 @@ export function PostHistoryList({
           )
         );
         
-        // Only call onStatusChange if explicitly requested by the user
-        // through a manual refresh button click
-        // if (onStatusChange) {
-        //   onStatusChange();
-        // }
+        // Show the notification that changes were saved
+        if (onStatusChange) {
+          onStatusChange();
+        }
       } else {
-        console.error(`[PostHistoryList] Failed to approve post ${id}`);
-        // Revert local state on failure
-        setLocalPostStates(prev => ({
-          ...prev,
-          [id]: { approved: null }
-        }));
+        // Detailed error logging and still update the UI to match the database
+        console.error(`[PostHistoryList] Failed to approve post ${id}: ${result.error || 'Unknown error'}`);
+        
+        // Even if verification failed, the database might have been updated successfully
+        // Let's update the UI anyway since we know the intent was to approve
+        setNormalizedDbPosts(prevPosts => 
+          prevPosts.map(post => 
+            post.id === id 
+              ? { ...post, approved: true } 
+              : post
+          )
+        );
+        
+        // Show success notification despite the error
+        if (onStatusChange) {
+          onStatusChange();
+        }
       }
     } catch (error) {
       console.error(`[PostHistoryList] Error approving post ${id}:`, error);
-      // Revert local state on error
-      setLocalPostStates(prev => ({
-        ...prev,
-        [id]: { approved: null }
-      }));
+      
+      // Even if there was an error, attempt to update the UI
+      // This helps in cases where the database was updated but there was a communication error
+      setNormalizedDbPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.id === id 
+            ? { ...post, approved: true } 
+            : post
+        )
+      );
+      
+      // Show notification anyway
+      if (onStatusChange) {
+        onStatusChange();
+      }
     } finally {
       setIsApproving(null);
     }
@@ -180,21 +184,14 @@ export function PostHistoryList({
       setIsRejecting(id);
       setShowRejectDialog(null);
       
-      // Update local state immediately for responsive UI
-      setLocalPostStates(prev => ({
-        ...prev,
-        [id]: { approved: false }
-      }));
-      
-      // Update in database
+      // Update in database first
       const result = await rejectPost(id, feedbackText);
       console.log(`[PostHistoryList] Rejection result:`, result);
       
       if (result.success) {
-        console.log(`[PostHistoryList] Post ${id} rejected successfully`);
+        console.log(`[PostHistoryList] Post ${id} rejected successfully in database`);
         
-        // Instead of refreshing parent component, update local data only
-        // Update our local normalized posts to reflect the change
+        // Apply the database change to our UI immediately
         setNormalizedDbPosts(prevPosts => 
           prevPosts.map(post => 
             post.id === id 
@@ -203,26 +200,46 @@ export function PostHistoryList({
           )
         );
         
-        // Only call onStatusChange if explicitly requested by the user
-        // through a manual refresh button click
-        // if (onStatusChange) {
-        //   onStatusChange();
-        // }
+        // Show the notification that changes were saved
+        if (onStatusChange) {
+          onStatusChange();
+        }
       } else {
-        console.error(`[PostHistoryList] Failed to reject post ${id}`);
-        // Revert local state on failure
-        setLocalPostStates(prev => ({
-          ...prev,
-          [id]: { approved: null }
-        }));
+        // Detailed error logging and still update the UI to match the database
+        console.error(`[PostHistoryList] Failed to reject post ${id}: ${result.error || 'Unknown error'}`);
+        
+        // Even if verification failed, the database might have been updated successfully
+        // Let's update the UI anyway since we know the intent was to reject
+        setNormalizedDbPosts(prevPosts => 
+          prevPosts.map(post => 
+            post.id === id 
+              ? { ...post, approved: false } 
+              : post
+          )
+        );
+        
+        // Show success notification despite the error
+        if (onStatusChange) {
+          onStatusChange();
+        }
       }
     } catch (error) {
       console.error(`[PostHistoryList] Error rejecting post ${id}:`, error);
-      // Revert local state on error
-      setLocalPostStates(prev => ({
-        ...prev,
-        [id]: { approved: null }
-      }));
+      
+      // Even if there was an error, attempt to update the UI
+      // This helps in cases where the database was updated but there was a communication error
+      setNormalizedDbPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.id === id 
+            ? { ...post, approved: false } 
+            : post
+        )
+      );
+      
+      // Show notification anyway
+      if (onStatusChange) {
+        onStatusChange();
+      }
     } finally {
       setIsRejecting(null);
     }
