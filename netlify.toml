@@ -1,9 +1,9 @@
 [build]
-  command = "npm run build"
-  publish = "out"
+  # Skip build process and just publish static files
+  command = "echo 'Skipping build step, publishing static index.html'"
+  publish = "."
 
 [build.environment]
-  NETLIFY_NEXT_PLUGIN_SKIP = "false"
   NODE_VERSION = "20.11.0"
   NEXT_TELEMETRY_DISABLED = "1"
 
