@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Base styles to prevent horizontal scrolling */
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: inherit;
+}
+
+/* Header title visibility */
+.header-title {
+  display: inline-block;
+}
+
 @keyframes twinkle {
   0%, 100% { opacity: 0.3; transform: scale(0.8); }
   50% { opacity: 1; transform: scale(1); }
@@ -77,6 +95,11 @@ html {
     --spacing-sm: 8px;
   }
   
+  /* Hide header title on mobile */
+  .header-title {
+    display: none;
+  }
+  
   /* Tab navigation adjustments */
   .tabs-container {
     width: 100%;
@@ -93,6 +116,12 @@ html {
   .container {
     padding-left: var(--spacing-md);
     padding-right: var(--spacing-md);
+  }
+  
+  /* Image container adjustments */
+  img {
+    max-width: 100%;
+    height: auto;
   }
 }
 

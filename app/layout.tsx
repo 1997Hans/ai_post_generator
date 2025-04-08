@@ -75,14 +75,17 @@ export default function RootLayout({
                         }}>
                           <Pencil size={20} style={{ color: "white" }} />
                         </div>
-                        <span style={{
-                          fontWeight: "bold",
-                          fontSize: "20px",
-                          color: "transparent",
-                          backgroundImage: "linear-gradient(to right, #ea4c89, #8f4bde, #4668ea)",
-                          backgroundClip: "text",
-                          WebkitBackgroundClip: "text"
-                        }}>
+                        <span 
+                          className="header-title"
+                          style={{
+                            fontWeight: "bold",
+                            fontSize: "20px",
+                            color: "transparent",
+                            backgroundImage: "linear-gradient(to right, #ea4c89, #8f4bde, #4668ea)",
+                            backgroundClip: "text",
+                            WebkitBackgroundClip: "text"
+                          }}
+                        >
                           Social Media Post Generator
                         </span>
                       </Link>

@@ -9,10 +9,12 @@ export default function Home() {
       margin: "0 auto", 
       width: "100%",
       position: "relative",
-      zIndex: 10
+      zIndex: 10,
+      overflowX: "hidden",
+      boxSizing: "border-box"
     }}>
       <div style={{ 
-        maxWidth: "800px", 
+        maxWidth: "100%", 
         margin: "0 auto", 
         textAlign: "center",
         position: "relative",

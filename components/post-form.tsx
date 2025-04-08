@@ -434,13 +434,13 @@ export function PostForm() {
       )}
     
       {/* Tabs */}
-      <div style={{ 
+      <div className="tabs-container" style={{ 
         display: "flex", 
         borderBottom: "1px solid rgba(91, 77, 168, 0.2)",
         marginBottom: "24px",
-        // Add overflow handling for mobile
         overflowX: "auto",
-        width: "100%"
+        width: "100%",
+        WebkitOverflowScrolling: "touch"
       }}>
         <button
           onClick={() => setActiveTab("create")}
@@ -453,7 +453,8 @@ export function PostForm() {
             borderLeft: "none", 
             borderRight: "none",
             borderTop: "none",
-            cursor: "pointer"
+            cursor: "pointer",
+            whiteSpace: "nowrap"
           }}
         >
           Create Post
@@ -471,7 +472,8 @@ export function PostForm() {
             borderRight: "none",
             borderTop: "none",
             cursor: result ? "pointer" : "not-allowed",
-            opacity: result ? 1 : 0.5
+            opacity: result ? 1 : 0.5,
+            whiteSpace: "nowrap"
           }}
         >
           Preview
@@ -480,7 +482,7 @@ export function PostForm() {
       
       {/* Create Tab */}
       {activeTab === "create" && (
-        <div style={{ maxWidth: "100%" }}>
+        <div style={{ maxWidth: "100%", width: "100%" }}>
           <form 
             onSubmit={handleFormSubmit}
             className="form-container"
@@ -673,9 +675,9 @@ export function PostForm() {
       
       {/* Preview Tab */}
       {activeTab === "preview" && (
-        <div>
+        <div style={{ width: "100%", maxWidth: "100%" }}>
           {result ? (
-            <div>
+            <div style={{ width: "100%" }}>
               {/* Image display with responsive adjustments */}
               {result.imageUrl && (
                 <div style={{ 
@@ -688,17 +690,18 @@ export function PostForm() {
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
-                  maxHeight: "550px"
+                  maxHeight: "550px",
+                  width: "100%",
+                  maxWidth: "100%"
                 }}>
                   <img
                     src={result.imageUrl}
-                    alt={result.caption}
+                    alt={result.caption || "Generated image"}
                     style={{
                       width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      borderRadius: "12px",
-                      animation: "float 6s infinite ease-in-out"
+                      maxWidth: "100%",
+                      objectFit: "contain",
+                      borderRadius: "12px"
                     }}
                   />
                 </div>
@@ -710,7 +713,11 @@ export function PostForm() {
                 border: "1px solid rgba(91, 77, 168, 0.2)",
                 borderRadius: "12px",
                 padding: "24px",
-                marginBottom: "24px"
+                marginBottom: "24px",
+                width: "100%",
+                maxWidth: "100%",
+                overflowWrap: "break-word",
+                wordWrap: "break-word"
               }}>
                 <h2 style={{ 
                   fontSize: "20px", 
@@ -757,7 +764,8 @@ export function PostForm() {
                 <div style={{
                   display: "flex",
                   flexWrap: "wrap",
-                  gap: "8px"
+                  gap: "8px",
+                  width: "100%"
                 }}>
                   {result.hashtags.map((hashtag, index) => (
                     <span
@@ -768,7 +776,10 @@ export function PostForm() {
                         borderRadius: "8px",
                         padding: "4px 8px",
                         color: "#d8d4ea",
-                        fontSize: "14px"
+                        fontSize: "14px",
+                        maxWidth: "100%",
+                        overflowWrap: "break-word",
+                        wordBreak: "break-word"
                       }}
                     >
                       #{hashtag}
@@ -893,7 +904,11 @@ export function PostForm() {
           alignItems: "center",
           justifyContent: "center",
           zIndex: 9999,
-          padding: "1rem"
+          padding: "1rem",
+          overflowX: "hidden",
+          width: "100vw",
+          height: "100vh",
+          boxSizing: "border-box"
         }}>
           <div style={{
             backgroundColor: "rgba(20, 15, 35, 0.8)",
@@ -903,7 +918,9 @@ export function PostForm() {
             maxWidth: "32rem",
             width: "100%",
             position: "relative",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)"
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+            maxHeight: "90vh",
+            overflowY: "auto"
           }}>
             {/* Close button */}
             <button 
