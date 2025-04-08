@@ -19,27 +19,8 @@
       "handle": "filesystem"
     },
     {
-      "src": "/api/chat",
-      "dest": "/api/chat",
-      "methods": ["POST"],
-      "headers": {
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "x-vercel-max-allowed-duration": "60000"
-      }
-    },
-    {
       "src": "/uploads/(.*)",
       "dest": "/uploads/$1"
-    },
-    {
-      "src": "/images/(.*)",
-      "dest": "/images/$1"
     }
-  ],
-  "functions": {
-    "api/chat/route.ts": {
-      "memory": 1024,
-      "maxDuration": 60
-    }
-  }
+  ]
 }
