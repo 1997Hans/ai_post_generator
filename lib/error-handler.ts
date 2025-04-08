@@ -28,6 +28,28 @@ export function formatError(error: unknown): ErrorResponse {
 }
 
 /**
+ * Handler for API errors in server actions
+ * Returns a standardized error response
+ */
+export function handleApiError(error: unknown, defaultMessage: string = 'API request failed'): ErrorResponse {
+  console.error('API Error:', error);
+  
+  if (error instanceof Error) {
+    return {
+      message: error.message || defaultMessage,
+      code: error.name,
+      statusCode: 'statusCode' in error ? error.statusCode : 500
+    };
+  }
+  
+  return {
+    message: defaultMessage,
+    code: 'unknown_error',
+    statusCode: 500,
+  };
+}
+
+/**
  * Helper to handle async errors in React components
  */
 export async function handleAsyncError<T>(

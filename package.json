@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prebuild": "mkdir -p public/uploads",
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run prebuild && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",

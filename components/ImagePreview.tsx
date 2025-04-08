@@ -74,6 +74,19 @@ export function ImagePreview({
     }
   };
 
+  // Helper to check if the image is a data URL or a path
+  const getImageProps = () => {
+    if (!image) return {};
+    
+    // If it's a data URL, use the full URL
+    if (image.startsWith('data:')) {
+      return { src: image };
+    }
+    
+    // If it's a path URL (starts with /), handle it appropriately
+    return { src: image };
+  };
+
   return (
     <Card className={`overflow-hidden ${className}`}>
       <CardContent className="p-0">
@@ -91,7 +104,7 @@ export function ImagePreview({
         ) : image ? (
           <div className="relative aspect-square w-full">
             <Image
-              src={image}
+              {...getImageProps()}
               alt={prompt || "Generated image"}
               fill
               sizes="(max-width: 768px) 100vw, 50vw"

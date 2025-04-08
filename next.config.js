@@ -17,7 +17,19 @@ const nextConfig = {
   },
   // Image configuration
   images: {
-    domains: ['ai-post-generator.vercel.app'],
+    domains: ['ai-post-generator.vercel.app', 'localhost'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'ai-post-generator.vercel.app',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        pathname: '/**',
+      }
+    ],
     formats: ['image/avif', 'image/webp'],
   },
   // Enable experimental server actions
@@ -25,7 +37,9 @@ const nextConfig = {
     serverActions: {
       allowedOrigins: ['localhost:3000', 'ai-post-generator.vercel.app'],
     }
-  }
+  },
+  // Output a standalone build for better deployment compatibility
+  output: 'standalone',
 }
 
 module.exports = nextConfig 

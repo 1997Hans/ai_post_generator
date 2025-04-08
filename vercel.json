@@ -11,5 +11,16 @@
   ],
   "env": {
     "NEXT_TELEMETRY_DISABLED": "1"
-  }
+  },
+  "public": true,
+  "outputDirectory": ".vercel/output/static",
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/uploads/(.*)",
+      "dest": "/uploads/$1"
+    }
+  ]
 }
