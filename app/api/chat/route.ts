@@ -4,43 +4,63 @@ import { getGeminiModel, isGeminiConfigured } from '@/lib/gemini';
 import { generateImage } from '@/lib/huggingface';
 import { enhanceImagePrompt } from '@/lib/image-prompts';
 
+// Set a reasonable timeout for API calls
+const API_TIMEOUT = 15000; // 15 seconds
+
+// Create a timeout promise
+const timeout = (ms: number) => {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(`Request timed out after ${ms}ms`));
+    }, ms);
+  });
+};
+
 // Mock response data for different topics
 const mockResponses = {
   default: {
     mainContent: "Experience the beauty of our world! From majestic mountains to serene beaches, nature has so much to offer. Take a break from the digital world and reconnect with the natural one. What's your favorite outdoor spot?",
     caption: "Finding peace in nature's embrace 🌿 #NatureLovers",
     hashtags: ["NatureLovers", "Outdoors", "Explore", "Adventure"],
-    visualPrompt: "A beautiful landscape scene with mountains and a peaceful lake, golden sunlight streaming through trees"
+    visualPrompt: "A beautiful landscape scene with mountains and a peaceful lake, golden sunlight streaming through trees",
+    imageUrl: "/images/fallback-image.jpg"  // Default fallback image
   },
   
   "running era": {
     mainContent: "Ready for a run that changes everything? Lace up those shoes and join the running era! Whether you're a beginner or seasoned runner, every step is a victory. Share your journey, inspire others, and be part of something bigger than yourself.",
     caption: "Taking strides towards a healthier, happier you. Who's joining the movement?",
     hashtags: ["RunningEra", "FitnessGoals", "MoveWithPurpose"],
-    visualPrompt: "A pair of running shoes on a sunrise trail, with motivational text overlay"
+    visualPrompt: "A pair of running shoes on a sunrise trail, with motivational text overlay",
+    imageUrl: "/images/fallback-image.jpg"  // Default fallback image
   },
   
   "nature adventure": {
     mainContent: "The wilderness is calling! Pack your bags for an unforgettable nature adventure. From hidden waterfalls to breathtaking mountain views, there's something magical about disconnecting from technology and reconnecting with Mother Earth. What will you discover?",
     caption: "Lost in nature, found myself. Every adventure tells a story! 🏞️🌲",
     hashtags: ["NatureAdventure", "Wilderness", "ExploreOutdoors", "EarthWonders"],
-    visualPrompt: "A hiker standing on a mountain overlook with arms raised, overlooking a vast forest landscape with dramatic lighting"
+    visualPrompt: "A hiker standing on a mountain overlook with arms raised, overlooking a vast forest landscape with dramatic lighting",
+    imageUrl: "/images/fallback-image.jpg"  // Default fallback image
   },
   
   "food": {
     mainContent: "Delicious flavors that bring people together! Whether you're a foodie exploring new cuisines or simply enjoying comfort food, every meal tells a story. What's on your plate today?",
     caption: "Good food, good mood! Savoring every bite of this culinary journey. 🍽️",
     hashtags: ["FoodLover", "CulinaryDelight", "TastyTreats", "FoodJourney"],
-    visualPrompt: "A beautifully plated meal with vibrant colors and textures, soft natural lighting highlighting fresh ingredients"
+    visualPrompt: "A beautifully plated meal with vibrant colors and textures, soft natural lighting highlighting fresh ingredients",
+    imageUrl: "/images/fallback-image.jpg"  // Default fallback image
   },
   
   "travel": {
     mainContent: "Adventure awaits around every corner! From bustling city streets to serene countryside views, travel opens our minds and hearts to new experiences. Where will your next journey take you?",
     caption: "Collecting moments, not things. Every destination a new chapter. ✈️🌍",
     hashtags: ["TravelBug", "Wanderlust", "Explore", "JourneyOn"],
-    visualPrompt: "A traveler looking out at a scenic cityscape or landmark during golden hour, with a hint of adventure and wonder"
+    visualPrompt: "A traveler looking out at a scenic cityscape or landmark during golden hour, with a hint of adventure and wonder",
+    imageUrl: "/images/fallback-image.jpg"  // Default fallback image
   }
 };
+
+// Set a higher timeout for this route
+export const maxDuration = 60; // 60 seconds max duration for Vercel 
 
 export async function POST(req: Request) {
   console.log('Chat API route called');
@@ -89,115 +109,144 @@ export async function POST(req: Request) {
       const model = getGeminiModel();
       console.log('Gemini model initialized, generating content...');
       
-      // Call the Gemini API
-      const result = await model.generateContent({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        },
-        safetySettings: [
-          {
-            category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-          },
-          {
-            category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-          },
-        ],
-      });
-      
-      // Process the response
-      const text = result.response.text();
-      console.log('Generated response text:', text.substring(0, 100) + '...');
-      
-      // Parse the response text as JSON
-      try {
-        // First, try to parse as JSON directly
-        const jsonContent = JSON.parse(text);
-        console.log('Successfully parsed JSON response');
-        
-        // Generate image using the visual prompt
-        if (jsonContent.visualPrompt) {
+      // Call the Gemini API with timeout
+      const generateContentWithTimeout = async () => {
+        try {
+          // Race between the API call and a timeout
+          const result = await Promise.race([
+            model.generateContent({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.7,
+                topK: 40,
+                topP: 0.95,
+                maxOutputTokens: 1024,
+              },
+              safetySettings: [
+                {
+                  category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                  threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                },
+                {
+                  category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                  threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                },
+              ],
+            }),
+            timeout(API_TIMEOUT)
+          ]);
+          
+          // Process the response
+          const text = result.response.text();
+          console.log('Generated response text:', text.substring(0, 100) + '...');
+          
+          // Parse the response text as JSON
           try {
-            console.log('Generating image for visual prompt:', jsonContent.visualPrompt);
-            const visualStyle = body.visualStyle || 'realistic';
-            
-            // Combine the visual prompt with some content for better context
-            const combinedPrompt = `${jsonContent.visualPrompt} ${jsonContent.mainContent.substring(0, 100)}`;
-            
-            // Enhance the prompt for better image generation
-            const enhancedPrompt = enhanceImagePrompt(combinedPrompt, visualStyle);
-            
-            // Generate the image
-            const imageUrl = await generateImage({
-              prompt: enhancedPrompt,
-              style: visualStyle,
-            });
-            
-            if (imageUrl) {
-              console.log('Successfully generated image');
-              jsonContent.imageUrl = imageUrl;
-            } else {
-              console.log('Image generation failed');
-            }
-          } catch (imageError) {
-            console.error('Error generating image:', imageError);
-          }
-        }
-        
-        // Return formatted content for Vercel AI SDK
-        return new Response(formatAsVercelAIMessage(JSON.stringify(jsonContent)), {
-          headers: { 'Content-Type': 'application/json' }
-        });
-      } catch (parseError) {
-        console.error('Error parsing response as JSON, trying to extract JSON from text');
-        
-        // Try to extract JSON from text (in case model wrapped it with extra text)
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          try {
-            const extractedJson = JSON.parse(jsonMatch[0]);
-            console.log('Successfully extracted and parsed JSON from response');
+            // First, try to parse as JSON directly
+            const jsonContent = JSON.parse(text);
+            console.log('Successfully parsed JSON response');
             
             // Generate image using the visual prompt
-            if (extractedJson.visualPrompt) {
+            if (jsonContent.visualPrompt) {
               try {
+                console.log('Generating image for visual prompt:', jsonContent.visualPrompt);
                 const visualStyle = body.visualStyle || 'realistic';
-                const combinedPrompt = `${extractedJson.visualPrompt} ${extractedJson.mainContent.substring(0, 100)}`;
+                
+                // Combine the visual prompt with some content for better context
+                const combinedPrompt = `${jsonContent.visualPrompt} ${jsonContent.mainContent.substring(0, 100)}`;
+                
+                // Enhance the prompt for better image generation
                 const enhancedPrompt = enhanceImagePrompt(combinedPrompt, visualStyle);
                 
-                const imageUrl = await generateImage({
-                  prompt: enhancedPrompt,
-                  style: visualStyle,
-                });
+                // Generate the image with timeout
+                const imageResult = await Promise.race([
+                  generateImage({
+                    prompt: enhancedPrompt,
+                    style: visualStyle,
+                  }),
+                  timeout(API_TIMEOUT)
+                ]);
                 
-                if (imageUrl) {
-                  extractedJson.imageUrl = imageUrl;
+                if (imageResult) {
+                  console.log('Successfully generated image');
+                  jsonContent.imageUrl = imageResult;
+                } else {
+                  console.log('Image generation failed, using fallback image');
+                  jsonContent.imageUrl = '/images/fallback-image.jpg';
                 }
               } catch (imageError) {
                 console.error('Error generating image:', imageError);
+                jsonContent.imageUrl = '/images/fallback-image.jpg';
+              }
+            } else {
+              // No visual prompt, use fallback image
+              jsonContent.imageUrl = '/images/fallback-image.jpg';
+            }
+            
+            // Return formatted content for Vercel AI SDK
+            return formatAsVercelAIMessage(JSON.stringify(jsonContent));
+          } catch (parseError) {
+            console.error('Error parsing response as JSON, trying to extract JSON from text');
+            
+            // Try to extract JSON from text (in case model wrapped it with extra text)
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              try {
+                const extractedJson = JSON.parse(jsonMatch[0]);
+                console.log('Successfully extracted and parsed JSON from response');
+                
+                // Generate image using the visual prompt
+                if (extractedJson.visualPrompt) {
+                  try {
+                    const visualStyle = body.visualStyle || 'realistic';
+                    const combinedPrompt = `${extractedJson.visualPrompt} ${extractedJson.mainContent.substring(0, 100)}`;
+                    const enhancedPrompt = enhanceImagePrompt(combinedPrompt, visualStyle);
+                    
+                    const imageUrl = await Promise.race([
+                      generateImage({
+                        prompt: enhancedPrompt,
+                        style: visualStyle,
+                      }),
+                      timeout(API_TIMEOUT)
+                    ]);
+                    
+                    if (imageUrl) {
+                      extractedJson.imageUrl = imageUrl;
+                    } else {
+                      extractedJson.imageUrl = '/images/fallback-image.jpg';
+                    }
+                  } catch (imageError) {
+                    console.error('Error generating image:', imageError);
+                    extractedJson.imageUrl = '/images/fallback-image.jpg';
+                  }
+                } else {
+                  extractedJson.imageUrl = '/images/fallback-image.jpg';
+                }
+                
+                return formatAsVercelAIMessage(JSON.stringify(extractedJson));
+              } catch (extractError) {
+                console.error('Failed to extract valid JSON from response');
+                throw extractError;
               }
             }
             
-            return new Response(formatAsVercelAIMessage(JSON.stringify(extractedJson)), {
-              headers: { 'Content-Type': 'application/json' }
-            });
-          } catch (extractError) {
-            console.error('Failed to extract valid JSON from response');
+            // If all parsing attempts fail, throw an error to use mock data
+            throw new Error('Failed to parse AI response');
           }
+        } catch (error) {
+          console.error('Error in content generation:', error);
+          throw error;
         }
-        
-        // If all parsing attempts fail, return the raw text
-        console.warn('Returning raw text as fallback');
-        return new Response(formatAsVercelAIMessage(text), {
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-    } catch (genError: any) {
+      };
+      
+      // Try to generate content with timeout handling
+      const formattedContent = await generateContentWithTimeout();
+      
+      // Return the formatted content
+      return new Response(formattedContent, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (genError) {
       console.error('Gemini generation error:', genError);
       console.log('Falling back to mock response due to API error');
       
@@ -206,13 +255,8 @@ export async function POST(req: Request) {
     }
   } catch (error: any) {
     console.error('Chat API error:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Unknown error',
-        suggestion: "Check your request format and API configuration"
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    // Return a more graceful error with fallback to mock data
+    return useMockResponse('error fallback', formatAsVercelAIMessage, 'realistic');
   }
 }
 
@@ -250,25 +294,34 @@ async function useMockResponse(topic: string, formatAsVercelAIMessage: (content:
     };
   }
   
-  // Try to generate an image for the mock response
+  // Try to generate an image for the mock response, but with proper error handling
   try {
-    if (mockResponse.visualPrompt) {
+    if (mockResponse.visualPrompt && !mockResponse.imageUrl.includes('fallback-image')) {
       console.log('Generating image for mock response...');
       const combinedPrompt = `${mockResponse.visualPrompt} ${mockResponse.mainContent.substring(0, 100)}`;
       const enhancedPrompt = enhanceImagePrompt(combinedPrompt, visualStyle);
       
-      const imageUrl = await generateImage({
-        prompt: enhancedPrompt,
-        style: visualStyle,
-      });
+      // Use timeout to avoid hanging
+      const imageUrl = await Promise.race([
+        generateImage({
+          prompt: enhancedPrompt,
+          style: visualStyle,
+        }),
+        timeout(API_TIMEOUT)
+      ]);
       
       if (imageUrl) {
         console.log('Successfully generated image for mock response');
         mockResponse.imageUrl = imageUrl;
+      } else {
+        // Use fallback if image generation fails
+        mockResponse.imageUrl = '/images/fallback-image.jpg';
       }
     }
   } catch (error) {
     console.error('Error generating image for mock response:', error);
+    // Ensure we have a fallback image
+    mockResponse.imageUrl = '/images/fallback-image.jpg';
   }
   
   // Convert the mock response to JSON

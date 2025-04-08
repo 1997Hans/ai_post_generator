@@ -306,7 +306,7 @@ export function PostForm() {
         "ContentCreation", 
         "DigitalMarketing"
       ],
-      imageUrl: "https://via.placeholder.com/600x400?text=Sample+Image",
+      imageUrl: "/images/fallback-image.jpg",
       visualPrompt: `A beautiful visual representing ${prompt}`
     };
     
