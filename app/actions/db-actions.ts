@@ -434,4 +434,35 @@ export async function getAllPostsUncached(): Promise<Post[]> {
     console.error('[DB Action] Unexpected error fetching posts:', error);
     throw error;
   }
+}
+
+export async function savePostRating(postId: string, rating: number, comment: string = '') {
+  try {
+    const ratingId = uuidv4()
+    const timestamp = new Date().toISOString()
+    
+    // Add rating to the new post_ratings table
+    const { error } = await supabase
+      .from('post_ratings')
+      .insert({
+        id: ratingId,
+        post_id: postId,
+        rating: rating,
+        comment: comment,
+        created_at: timestamp
+      })
+    
+    if (error) throw new Error(error.message)
+    
+    revalidatePath('/post/[id]')
+    revalidatePath('/dashboard')
+    
+    return { success: true, ratingId }
+  } catch (error) {
+    console.error('Error saving post rating:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    }
+  }
 } 

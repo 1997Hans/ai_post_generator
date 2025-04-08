@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getPost, approvePost, rejectPost } from '@/app/actions/db-actions';
+import { getPost, approvePost, rejectPost, savePostRating } from '@/app/actions/db-actions';
 import { Post } from '@/lib/types';
 import { ArrowLeft, Edit, Copy, Download, Share, Calendar, Star, CheckCircle, XCircle } from 'lucide-react';
 import { ApprovalStatusBadge } from '@/components/approval/ApprovalStatusBadge';
@@ -529,23 +529,52 @@ export default function PostPage({ params }: { params: { id: string } }) {
               </div>
             </div>
             
-            <button style={{ 
-              width: '100%',
-              padding: '14px',
-              backgroundColor: '#5552fe',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              height: '50px',
-              boxShadow: '0 2px 10px rgba(85, 82, 254, 0.3)',
-              transition: 'background-color 0.2s ease, transform 0.1s ease',
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
-              Submit Feedback
+            <button 
+              style={{ 
+                width: '100%',
+                padding: '14px',
+                backgroundColor: '#5552fe',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                height: '50px',
+                boxShadow: '0 2px 10px rgba(85, 82, 254, 0.3)',
+                transition: 'background-color 0.2s ease, transform 0.1s ease',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+              onClick={async () => {
+                if (!post) return;
+                if (rating === null) {
+                  toast.error("Please provide a rating before submitting feedback");
+                  return;
+                }
+                
+                try {
+                  setIsSubmitting(true);
+                  const result = await savePostRating(post.id, rating || 0, comment);
+                  
+                  if (result.success) {
+                    toast.success("Rating submitted successfully!");
+                    // Reset form
+                    setRating(null);
+                    setComment('');
+                  } else {
+                    toast.error(result.error || "Failed to submit rating");
+                  }
+                } catch (err) {
+                  toast.error("An error occurred while submitting your rating");
+                  console.error(err);
+                } finally {
+                  setIsSubmitting(false);
+                }
+              }}
+              disabled={isSubmitting || rating === null}
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit Rating'}
             </button>
           </div>
         </div>
