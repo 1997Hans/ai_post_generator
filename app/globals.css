@@ -59,3 +59,73 @@
   0%, 100% { opacity: 0.4; }
   50% { opacity: 0.8; }
 }
+
+/* Mobile Responsive Styles */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Base responsive styles */
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+  
+  :root {
+    --spacing-lg: 24px;
+    --spacing-md: 16px;
+    --spacing-sm: 8px;
+  }
+  
+  /* Tab navigation adjustments */
+  .tabs-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Button and input sizing */
+  button, input, select, textarea {
+    font-size: 16px !important; /* Prevents iOS zoom on input focus */
+  }
+  
+  /* Adjust layouts and spacing */
+  .container {
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+}
+
+/* Small Mobile Styles */
+@media (max-width: 480px) {
+  :root {
+    --spacing-lg: 16px;
+    --spacing-md: 12px;
+    --spacing-sm: 6px;
+  }
+  
+  /* Stack elements that would normally be side-by-side */
+  .grid-cols-2,
+  .grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Reduce padding and margins */
+  .card, .box, .container {
+    padding: var(--spacing-md) !important;
+    margin-bottom: var(--spacing-md) !important;
+  }
+  
+  /* Fix button layouts on small mobile */
+  .button-group {
+    flex-direction: column !important;
+    gap: var(--spacing-sm) !important;
+  }
+  
+  /* Ensure modal content fits */
+  .modal-content {
+    width: 95% !important;
+    max-height: 80vh !important;
+    padding: var(--spacing-md) !important;
+  }
+}

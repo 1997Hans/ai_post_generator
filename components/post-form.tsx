@@ -55,6 +55,51 @@ export function PostForm() {
   const [currentMessage, setCurrentMessage] = useState(loadingMessages[0])
   const [currentFact, setCurrentFact] = useState(socialMediaFacts[0])
   
+  // Style objects with responsive adjustments
+  const formContainerStyle = {
+    width: "100%",
+    maxWidth: "800px",
+    margin: "0 auto",
+    padding: "0",
+    display: "flex",
+    flexDirection: "column",
+    gap: "32px"
+  } as React.CSSProperties;
+
+  const selectionGridStyle = {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: "24px",
+    width: "100%"
+  } as React.CSSProperties;
+
+  // Ensure dropdown select elements are fully visible on mobile devices
+  const dropdownStyle = {
+    width: "100%",
+    padding: "12px 16px",
+    borderRadius: "8px",
+    backgroundColor: "rgba(29, 23, 52, 0.5)",
+    border: "1px solid rgba(91, 77, 168, 0.2)",
+    color: "white",
+    fontSize: "16px",
+    appearance: "none",
+    WebkitAppearance: "none",
+    MozAppearance: "none",
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%238f4bde' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "right 16px center",
+    fontFamily: "inherit",
+    boxSizing: "border-box"
+  } as React.CSSProperties;
+
+  // Fix action buttons layout on mobile
+  const mobileButtonsStyle = {
+    display: "flex",
+    justifyContent: "center",
+    gap: "16px",
+    marginBottom: "24px"
+  } as React.CSSProperties;
+  
   // Progress simulation
   useEffect(() => {
     if (isLoading) {
@@ -283,6 +328,95 @@ export function PostForm() {
     generatePost()
   }
 
+  // Add CSS to handle mobile responsiveness globally
+  useEffect(() => {
+    // Add responsive styles to head
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 40px !important;
+        }
+        
+        textarea, select {
+          font-size: 14px !important;
+        }
+        
+        .generate-button {
+          padding: 12px 24px !important;
+        }
+        
+        .form-container {
+          gap: 20px !important;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        h1 {
+          font-size: 32px !important;
+        }
+        
+        textarea {
+          min-height: 100px !important;
+        }
+        
+        .loading-content {
+          max-width: 100% !important;
+          padding: 1rem 0.5rem !important;
+        }
+        
+        .selection-grid {
+          grid-template-columns: 1fr !important;
+          gap: 16px !important;
+        }
+        
+        .dropdown-select {
+          font-size: 14px !important;
+          padding: 10px 14px !important;
+        }
+        
+        .button-group {
+          flex-direction: column !important;
+          gap: 12px !important;
+        }
+      }
+      
+      /* Loading modal animation */
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      
+      @keyframes pulse {
+        0% { opacity: 0.3; transform: scale(0.95); }
+        50% { opacity: 0.5; transform: scale(1.05); }
+        100% { opacity: 0.3; transform: scale(0.95); }
+      }
+      
+      @keyframes loading-bar {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(400%); }
+      }
+      
+      @keyframes pulse-glow {
+        0% { opacity: 0.2; transform: scale(0.95); }
+        50% { opacity: 0.4; transform: scale(1.05); }
+        100% { opacity: 0.2; transform: scale(0.95); }
+      }
+      
+      @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+      }
+    `;
+    document.head.appendChild(styleElement);
+    
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+
   return (
     <div>
       {/* Error message display */}
@@ -303,7 +437,10 @@ export function PostForm() {
       <div style={{ 
         display: "flex", 
         borderBottom: "1px solid rgba(91, 77, 168, 0.2)",
-        marginBottom: "24px"
+        marginBottom: "24px",
+        // Add overflow handling for mobile
+        overflowX: "auto",
+        width: "100%"
       }}>
         <button
           onClick={() => setActiveTab("create")}
@@ -346,15 +483,8 @@ export function PostForm() {
         <div style={{ maxWidth: "100%" }}>
           <form 
             onSubmit={handleFormSubmit}
-            style={{
-              width: "100%",
-              maxWidth: "800px",
-              margin: "0 auto",
-              padding: "0",
-              display: "flex",
-              flexDirection: "column",
-              gap: "32px"
-            }}
+            className="form-container"
+            style={formContainerStyle}
           >
             <div style={{ width: "100%" }}>
               <h2 style={{ 
@@ -387,12 +517,7 @@ export function PostForm() {
               </div>
             </div>
 
-            <div style={{ 
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: "24px",
-              width: "100%"
-            }}>
+            <div className="selection-grid" style={selectionGridStyle}>
               <div>
                 <h2 style={{ 
                   fontSize: "16px", 
@@ -406,23 +531,8 @@ export function PostForm() {
                   <select
                     value={platform}
                     onChange={(e) => setPlatform(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      borderRadius: "8px",
-                      backgroundColor: "rgba(29, 23, 52, 0.5)",
-                      border: "1px solid rgba(91, 77, 168, 0.2)",
-                      color: "white",
-                      fontSize: "16px",
-                      appearance: "none",
-                      WebkitAppearance: "none",
-                      MozAppearance: "none",
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%238f4bde' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: "right 16px center",
-                      fontFamily: "inherit",
-                      boxSizing: "border-box"
-                    }}
+                    className="dropdown-select"
+                    style={dropdownStyle}
                   >
                     <option value="facebook">Facebook</option>
                     <option value="instagram">Instagram</option>
@@ -445,23 +555,8 @@ export function PostForm() {
                   <select
                     value={tone}
                     onChange={(e) => setTone(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      borderRadius: "8px",
-                      backgroundColor: "rgba(29, 23, 52, 0.5)",
-                      border: "1px solid rgba(91, 77, 168, 0.2)",
-                      color: "white",
-                      fontSize: "16px",
-                      appearance: "none",
-                      WebkitAppearance: "none",
-                      MozAppearance: "none",
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%238f4bde' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: "right 16px center",
-                      fontFamily: "inherit",
-                      boxSizing: "border-box"
-                    }}
+                    className="dropdown-select"
+                    style={dropdownStyle}
                   >
                     <option value="friendly">Friendly</option>
                     <option value="professional">Professional</option>
@@ -485,23 +580,8 @@ export function PostForm() {
                   <select
                     value={visualStyle}
                     onChange={(e) => setVisualStyle(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      borderRadius: "8px",
-                      backgroundColor: "rgba(29, 23, 52, 0.5)",
-                      border: "1px solid rgba(91, 77, 168, 0.2)",
-                      color: "white",
-                      fontSize: "16px",
-                      appearance: "none",
-                      WebkitAppearance: "none",
-                      MozAppearance: "none",
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%238f4bde' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: "right 16px center",
-                      fontFamily: "inherit",
-                      boxSizing: "border-box"
-                    }}
+                    className="dropdown-select"
+                    style={dropdownStyle}
                   >
                     <option value="realistic">Realistic Photo</option>
                     <option value="artistic">Artistic</option>
@@ -528,6 +608,7 @@ export function PostForm() {
                 <button
                   type="submit"
                   disabled={isLoading || !prompt.trim()}
+                  className="generate-button"
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -595,7 +676,7 @@ export function PostForm() {
         <div>
           {result ? (
             <div>
-              {/* Image display */}
+              {/* Image display with responsive adjustments */}
               {result.imageUrl && (
                 <div style={{ 
                   marginBottom: "24px",
@@ -609,51 +690,21 @@ export function PostForm() {
                   alignItems: "center",
                   maxHeight: "550px"
                 }}>
-                  <img 
-                    src={result.imageUrl} 
-                    alt="Generated visual"
+                  <img
+                    src={result.imageUrl}
+                    alt={result.caption}
                     style={{
                       width: "100%",
-                      height: "auto",
-                      objectFit: "contain",
-                      maxWidth: "100%",
-                      maxHeight: "550px",
-                      display: "block"
+                      height: "100%",
+                      objectFit: "cover",
+                      borderRadius: "12px",
+                      animation: "float 6s infinite ease-in-out"
                     }}
                   />
-                  <div style={{
-                    position: "absolute",
-                    top: "12px",
-                    right: "12px",
-                    zIndex: 10
-                  }}>
-                    <button
-                      onClick={handleImageDownload}
-                      style={{
-                        backgroundColor: "rgba(0, 0, 0, 0.6)",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        padding: "8px 12px",
-                        fontSize: "14px",
-                        cursor: "pointer",
-                        backdropFilter: "blur(4px)",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px"
-                      }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                      </svg>
-                      Download
-                    </button>
-                  </div>
                 </div>
               )}
 
+              {/* Content boxes with responsive spacing */}
               <div style={{ 
                 backgroundColor: "rgba(29, 23, 52, 0.5)",
                 border: "1px solid rgba(91, 77, 168, 0.2)",
@@ -661,230 +712,143 @@ export function PostForm() {
                 padding: "24px",
                 marginBottom: "24px"
               }}>
-                <h3 style={{ 
-                  fontSize: "18px", 
+                <h2 style={{ 
+                  fontSize: "20px", 
                   fontWeight: "600", 
-                  marginBottom: "16px",
-                  color: "#d8d4ea",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between"
+                  marginBottom: "12px",
+                  color: "#d8d4ea"
                 }}>
-                  <span>Main Content</span>
-                  <button 
-                    onClick={() => copyToClipboard(result.mainContent)}
-                    style={{
-                      backgroundColor: "rgba(143, 75, 222, 0.1)",
-                      border: "1px solid rgba(143, 75, 222, 0.2)",
-                      borderRadius: "4px",
-                      padding: "4px 8px",
-                      fontSize: "12px",
-                      cursor: "pointer"
-                    }}
-                  >
-                    Copy
-                  </button>
-                </h3>
-                <p style={{ 
-                  fontSize: "16px", 
-                  lineHeight: "1.6",
-                  color: "white"
+                  Main Content
+                </h2>
+                <p style={{
+                  fontSize: "16px",
+                  color: "#d8d4ea",
+                  lineHeight: 1.6,
+                  marginBottom: "16px"
                 }}>
                   {result.mainContent}
                 </p>
+
+                <h2 style={{ 
+                  fontSize: "20px", 
+                  fontWeight: "600", 
+                  marginBottom: "12px",
+                  color: "#d8d4ea"
+                }}>
+                  Caption
+                </h2>
+                <p style={{
+                  fontSize: "16px",
+                  color: "#d8d4ea",
+                  lineHeight: 1.6,
+                  marginBottom: "16px"
+                }}>
+                  {result.caption}
+                </p>
+
+                <h2 style={{ 
+                  fontSize: "20px", 
+                  fontWeight: "600", 
+                  marginBottom: "12px",
+                  color: "#d8d4ea"
+                }}>
+                  Hashtags
+                </h2>
+                <div style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "8px"
+                }}>
+                  {result.hashtags.map((hashtag, index) => (
+                    <span
+                      key={index}
+                      style={{
+                        backgroundColor: "rgba(29, 23, 52, 0.5)",
+                        border: "1px solid rgba(91, 77, 168, 0.2)",
+                        borderRadius: "8px",
+                        padding: "4px 8px",
+                        color: "#d8d4ea",
+                        fontSize: "14px"
+                      }}
+                    >
+                      #{hashtag}
+                    </span>
+                  ))}
+                </div>
               </div>
 
-              {result.caption && (
-                <div style={{ 
-                  backgroundColor: "rgba(29, 23, 52, 0.5)",
-                  border: "1px solid rgba(91, 77, 168, 0.2)",
-                  borderRadius: "12px",
-                  padding: "24px",
-                  marginBottom: "24px"
-                }}>
-                  <h3 style={{ 
-                    fontSize: "18px", 
-                    fontWeight: "600", 
-                    marginBottom: "16px",
-                    color: "#d8d4ea",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between"
-                  }}>
-                    <span>Caption</span>
-                    <button 
-                      onClick={() => copyToClipboard(result.caption)}
-                      style={{
-                        backgroundColor: "rgba(143, 75, 222, 0.1)",
-                        border: "1px solid rgba(143, 75, 222, 0.2)",
-                        borderRadius: "4px",
-                        padding: "4px 8px",
-                        fontSize: "12px",
-                        cursor: "pointer"
-                      }}
-                    >
-                      Copy
-                    </button>
-                  </h3>
-                  <p style={{ 
-                    fontSize: "16px", 
-                    lineHeight: "1.6",
-                    color: "white"
-                  }}>
-                    {result.caption}
-                  </p>
-                </div>
-              )}
-
-              {result.hashtags && result.hashtags.length > 0 && (
-                <div style={{ 
-                  backgroundColor: "rgba(29, 23, 52, 0.5)",
-                  border: "1px solid rgba(91, 77, 168, 0.2)",
-                  borderRadius: "12px",
-                  padding: "24px",
-                  marginBottom: "24px"
-                }}>
-                  <h3 style={{ 
-                    fontSize: "18px", 
-                    fontWeight: "600", 
-                    marginBottom: "16px",
-                    color: "#d8d4ea",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between"
-                  }}>
-                    <span>Hashtags</span>
-                    <button 
-                      onClick={() => copyToClipboard(result.hashtags.map(h => `#${h}`).join(' '))}
-                      style={{
-                        backgroundColor: "rgba(143, 75, 222, 0.1)",
-                        border: "1px solid rgba(143, 75, 222, 0.2)",
-                        borderRadius: "4px",
-                        padding: "4px 8px",
-                        fontSize: "12px",
-                        cursor: "pointer"
-                      }}
-                    >
-                      Copy
-                    </button>
-                  </h3>
-                  <div style={{ 
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "8px"
-                  }}>
-                    {result.hashtags.map((tag, index) => (
-                      <span 
-                        key={index}
-                        style={{
-                          backgroundColor: "rgba(70, 104, 234, 0.1)",
-                          border: "1px solid rgba(70, 104, 234, 0.2)",
-                          borderRadius: "4px",
-                          padding: "4px 8px",
-                          fontSize: "14px",
-                          color: "#a7a3bc"
-                        }}
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Save to Database Button */}
-              <div style={{ 
-                display: "flex", 
-                justifyContent: "center", 
-                marginTop: "32px" 
-              }}>
-                {saveStatus === "saved" ? (
-                  <div style={{ 
-                    display: "flex", 
-                    alignItems: "center", 
-                    gap: "8px",
+              {/* Action buttons */}
+              <div className="button-group" style={mobileButtonsStyle}>
+                <button
+                  onClick={() => copyToClipboard(result.mainContent)}
+                  style={{
                     padding: "12px 24px",
                     borderRadius: "8px",
-                    backgroundColor: "rgba(16, 185, 129, 0.1)",
-                    border: "1px solid rgba(16, 185, 129, 0.2)",
-                    color: "rgb(16, 185, 129)",
-                    fontSize: "16px"
-                  }}>
-                    <CheckCircle size={20} />
-                    <span>Saved to Database</span>
-                  </div>
-                ) : (
-                  <button
-                    onClick={handleSavePost}
-                    disabled={saveStatus === "saving"}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px",
-                      padding: "12px 24px",
-                      borderRadius: "8px",
-                      backgroundColor: "rgba(143, 75, 222, 0.15)",
-                      border: "1px solid rgba(143, 75, 222, 0.3)",
-                      color: "white",
-                      fontSize: "16px",
-                      fontWeight: "600",
-                      cursor: saveStatus === "saving" ? "not-allowed" : "pointer",
-                      opacity: saveStatus === "saving" ? 0.7 : 1
-                    }}
-                  >
-                    {saveStatus === "saving" ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H14L21 10V19C21 20.1046 20.1046 21 19 21Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M17 21V13H7V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M7 3V7H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        Save to Database
-                      </>
-                    )}
-                  </button>
-                )}
+                    backgroundColor: "rgba(29, 23, 52, 0.5)",
+                    border: "1px solid rgba(91, 77, 168, 0.2)",
+                    color: "#d8d4ea",
+                    fontSize: "16px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  Copy Content
+                </button>
+                <button
+                  onClick={handleImageDownload}
+                  style={{
+                    padding: "12px 24px",
+                    borderRadius: "8px",
+                    backgroundColor: "rgba(29, 23, 52, 0.5)",
+                    border: "1px solid rgba(91, 77, 168, 0.2)",
+                    color: "#d8d4ea",
+                    fontSize: "16px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  Download Image
+                </button>
+                <button
+                  onClick={handleSavePost}
+                  disabled={saveStatus === "saving"}
+                  style={{
+                    padding: "12px 24px",
+                    borderRadius: "8px",
+                    backgroundColor: "rgba(29, 23, 52, 0.5)",
+                    border: "1px solid rgba(91, 77, 168, 0.2)",
+                    color: "#d8d4ea",
+                    fontSize: "16px",
+                    cursor: saveStatus === "saving" ? "not-allowed" : "pointer",
+                    opacity: saveStatus === "saving" ? 0.7 : 1,
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  {saveStatus === "saving" ? "Saving..." : "Save to Database"}
+                </button>
               </div>
-              
-              {/* Create new post button (shows only after saving) */}
-              {saveStatus === "saved" && (
-                <div style={{ 
-                  display: "flex", 
-                  justifyContent: "center", 
-                  marginTop: "16px" 
-                }}>
-                  <button
-                    onClick={handleReset}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px",
-                      padding: "10px 20px",
-                      borderRadius: "8px",
-                      backgroundColor: "rgba(91, 77, 168, 0.1)",
-                      border: "1px solid rgba(91, 77, 168, 0.2)",
-                      color: "#a7a3bc",
-                      fontSize: "14px",
-                      cursor: "pointer"
-                    }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 4V20M20 12H4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    Create New Post
-                  </button>
-                </div>
-              )}
+
+              {/* Reset button */}
+              <div style={{
+                display: "flex",
+                justifyContent: "center"
+              }}>
+                <button
+                  onClick={handleReset}
+                  style={{
+                    padding: "12px 24px",
+                    borderRadius: "8px",
+                    backgroundColor: "rgba(29, 23, 52, 0.5)",
+                    border: "1px solid rgba(91, 77, 168, 0.2)",
+                    color: "#d8d4ea",
+                    fontSize: "16px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  Create New Post
+                </button>
+              </div>
             </div>
           ) : (
             <div style={{ 
@@ -892,17 +856,30 @@ export function PostForm() {
               padding: "40px", 
               color: "#a7a3bc" 
             }}>
-              {isLoading ? (
-                <p>Generating your post...</p>
-              ) : (
-                <p>Generate a post to see the preview.</p>
-              )}
+              <p style={{ fontSize: "18px", marginBottom: "24px" }}>
+                No preview available. Please generate a post first.
+              </p>
+              <button
+                onClick={() => setActiveTab("create")}
+                style={{
+                  padding: "12px 24px",
+                  borderRadius: "8px",
+                  backgroundColor: "rgba(29, 23, 52, 0.5)",
+                  border: "1px solid rgba(91, 77, 168, 0.2)",
+                  color: "#d8d4ea",
+                  fontSize: "16px",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                Create Post
+              </button>
             </div>
           )}
         </div>
       )}
 
-      {/* Loading Overlay - Fixed position over everything */}
+      {/* Loading Overlay with responsive styling */}
       {isLoading && (
         <div style={{
           position: "fixed",
@@ -990,8 +967,14 @@ export function PostForm() {
                 </div>
               </div>
               
-              {/* Text content */}
-              <div style={{ textAlign: "center", maxWidth: "28rem" }}>
+              {/* Text content with responsive maxWidth */}
+              <div 
+                className="loading-content" 
+                style={{ 
+                  textAlign: "center", 
+                  maxWidth: "28rem"
+                }}
+              >
                 <h3 style={{
                   fontSize: "1.5rem",
                   fontWeight: "600",
@@ -1092,4 +1075,4 @@ export function PostForm() {
       )}
     </div>
   );
-} 
+}
