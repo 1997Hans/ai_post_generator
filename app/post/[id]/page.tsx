@@ -198,8 +198,8 @@ export default function PostPage({ params }: { params: { id: string } }) {
           maxWidth: '500px',
           border: '1px solid #2c2846',
         }}>
-          <h3 style={{ marginBottom: '16px', fontSize: '18px' }}>Rejection Feedback</h3>
-          <p style={{ marginBottom: '12px', color: '#a090e9', fontSize: '14px' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '18px' }}>Rejection Feedback</h3>
+          <p style={{ margin: '0 0 16px 0', color: '#a090e9', fontSize: '14px' }}>
             Please provide feedback on why this post was rejected:
           </p>
           
@@ -216,6 +216,10 @@ export default function PostPage({ params }: { params: { id: string } }) {
               color: 'white',
               marginBottom: '16px',
               resize: 'vertical',
+              boxSizing: 'border-box',
+              fontFamily: 'inherit',
+              fontSize: '14px',
+              lineHeight: '1.5',
             }}
             placeholder="What needs to be improved?"
           />

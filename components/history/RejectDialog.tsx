@@ -42,12 +42,13 @@ export function RejectDialog({ isOpen, onClose, onReject, isSubmitting }: Reject
         }}>
           <h2 style={{
             fontSize: "18px",
-            fontWeight: "600"
+            fontWeight: "600",
+            margin: "0 0 8px 0"
           }}>Reject Post</h2>
           <p style={{
             fontSize: "14px",
             color: "#a7a3bc",
-            marginTop: "4px"
+            margin: "0"
           }}>
             Provide feedback on why this post was rejected
           </p>
@@ -68,7 +69,10 @@ export function RejectDialog({ isOpen, onClose, onReject, isSubmitting }: Reject
               color: "white",
               fontSize: "14px",
               lineHeight: "1.5",
-              resize: "vertical"
+              resize: "vertical",
+              boxSizing: "border-box",
+              fontFamily: "inherit",
+              marginBottom: "24px"
             }}
           />
           
@@ -76,7 +80,7 @@ export function RejectDialog({ isOpen, onClose, onReject, isSubmitting }: Reject
             display: "flex",
             justifyContent: "flex-end",
             gap: "12px",
-            marginTop: "24px"
+            marginTop: "0"
           }}>
             <button
               onClick={() => {
