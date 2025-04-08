@@ -11,5 +11,14 @@
   ],
   "env": {
     "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "build": {
+    "env": {
+      "GEMINI_API_KEY": "@gemini-api-key",
+      "HUGGINGFACE_API_KEY": "@huggingface-api-key",
+      "NEXT_PUBLIC_VERCEL_ANALYTICS": "true",
+      "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase-anon-key"
+    }
   }
 }
