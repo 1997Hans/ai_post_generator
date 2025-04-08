@@ -3,7 +3,7 @@
 import React from 'react';
 import { PostHistoryList } from '@/components/history/PostHistoryList';
 import Link from 'next/link';
-import { PlusCircle, Lightbulb, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import { PlusCircle, Lightbulb, AlertCircle, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getAllPosts } from '@/app/actions/db-actions';
 import { Post } from '@/lib/types';
@@ -12,70 +12,19 @@ import { ApprovalHelpTooltip } from '@/components/post/PostDetailHeader';
 export default function DashboardPage() {
   const [dbPosts, setDbPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [showRefreshAlert, setShowRefreshAlert] = useState(false);
-  const [lastRefreshTimeDisplay, setLastRefreshTimeDisplay] = useState('');
   
-  // Function to refresh data from database
-  const refreshData = () => {
-    console.log('Refreshing data from database...');
-    setIsLoading(true);
-    setRefreshTrigger(prev => prev + 1);
-    setLastRefresh(new Date());
-    setShowRefreshAlert(false);
+  // Function to notify user about potential database changes
+  const showRefreshReminder = () => {
+    setShowRefreshAlert(true);
   };
-  
-  // Function to force refresh with no caching
-  const forceRefreshData = async () => {
-    try {
-      console.log('Force refreshing data with no cache...');
-      setIsLoading(true);
-      
-      // Generate timestamp within the function call to avoid hydration issues
-      // This is safe because it's called directly from a user action
-      const timestamp = new Date().getTime();
-      const response = await fetch(`/api/posts?nocache=${timestamp}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-        next: { revalidate: 0 }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      const posts = await response.json();
-      console.log(`Force-loaded ${posts.length} posts from database:`, posts);
-      
-      // Log each post's approval status
-      posts.forEach(post => {
-        console.log(`[Dashboard] Post ${post.id}: approved=${post.approved}, Type: ${typeof post.approved}`);
-      });
-      
-      setDbPosts(posts);
-      setLastRefresh(new Date());
-      setShowRefreshAlert(false);
-    } catch (error) {
-      console.error('Failed to force-refresh posts:', error);
-      alert('Failed to refresh posts. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Fetch posts from database on initial load and when triggered
+
+  // Fetch posts from database on initial load
   useEffect(() => {
     async function loadPostsFromDb() {
       try {
         console.log('Loading posts from database...');
-        // Move the timestamp generation inside useEffect to avoid hydration mismatches
-        const cacheBuster = `?timestamp=${new Date().getTime()}`;
-        const response = await fetch(`/api/posts${cacheBuster}`, {
+        const response = await fetch(`/api/posts`, {
           cache: 'no-store',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -105,17 +54,7 @@ export default function DashboardPage() {
     }
     
     loadPostsFromDb();
-  }, [refreshTrigger]);
-  
-  // Function to notify user about potential database changes
-  const showRefreshReminder = () => {
-    setShowRefreshAlert(true);
-  };
-
-  // Update the time display on client-side only
-  useEffect(() => {
-    setLastRefreshTimeDisplay(lastRefresh.toLocaleTimeString());
-  }, [lastRefresh]);
+  }, []);
 
   return (
     <div style={{ 
@@ -146,48 +85,6 @@ export default function DashboardPage() {
         </div>
         
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <button 
-            onClick={refreshData}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              backgroundColor: "rgba(124, 58, 237, 0.1)",
-              color: "#7c3aed",
-              padding: "8px 12px",
-              borderRadius: "8px",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "14px"
-            }}
-          >
-            <RefreshCw size={14} 
-              className={isLoading ? "animate-spin" : ""} 
-            />
-            {isLoading ? "Refreshing..." : "Refresh from Database"}
-          </button>
-          
-          <button 
-            onClick={forceRefreshData}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              backgroundColor: "rgba(239, 68, 68, 0.1)",
-              color: "#ef4444",
-              padding: "8px 12px",
-              borderRadius: "8px",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "14px"
-            }}
-          >
-            <RefreshCw size={14} 
-              className={isLoading ? "animate-spin" : ""} 
-            />
-            Force Reload
-          </button>
-          
           <ApprovalHelpTooltip />
           
           <Link
@@ -245,20 +142,6 @@ export default function DashboardPage() {
         </div>
       )}
       
-      {/* Last refresh timestamp */}
-      <div style={{
-        display: "flex",
-        justifyContent: "flex-end",
-        alignItems: "center",
-        fontSize: "12px",
-        color: "#a7a3bc",
-        marginBottom: "8px",
-        gap: "8px"
-      }}>
-        <span>Last database sync: {lastRefreshTimeDisplay}</span>
-        <span style={{ color: "#7c3aed", cursor: "help" }} title="The dashboard always shows data from the database. Refresh to see the latest changes.">ⓘ</span>
-      </div>
-      
       {/* Social Media Manager Instructions */}
       <div style={{
         backgroundColor: "rgba(124, 58, 237, 0.1)",
@@ -278,8 +161,6 @@ export default function DashboardPage() {
           <p style={{ fontSize: "14px", color: "#a7a3bc", lineHeight: "1.6" }}>
             You can now approve or reject posts directly from this dashboard! Each post card has <span style={{ color: "#4ade80" }}>Approve</span> and <span style={{ color: "#ef4444" }}>Reject</span> buttons to quickly review content. 
             Click the eye icon on any post to view details and provide feedback when rejecting content.
-            <br/><br/>
-            <strong style={{ color: "#7c3aed" }}>Important:</strong> All post statuses are stored in the database. When you approve or reject a post, you'll need to click "Refresh from Database" to ensure you're seeing the latest data.
           </p>
         </div>
       </div>
@@ -295,14 +176,6 @@ export default function DashboardPage() {
           }}
         />
       </div>
-
-      <style jsx global>{`
-        /* Add animation for the loading spinner */
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 } 

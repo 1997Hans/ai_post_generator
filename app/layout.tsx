@@ -26,6 +26,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={spaceGrotesk.variable}>
       <head>
         <meta name="theme-color" content="#0a081a" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon-32x32.png" type="image/png" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body suppressHydrationWarning className={`${spaceGrotesk.className} min-h-screen bg-background font-sans antialiased`}>
         <ThemeProvider

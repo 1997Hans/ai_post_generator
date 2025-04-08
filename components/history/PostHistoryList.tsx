@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { Trash2, Edit, Eye, Sparkles, RefreshCw, Database, CheckCircle, XCircle } from 'lucide-react';
+import { Trash2, Edit, Eye, Sparkles, Database, CheckCircle, XCircle } from 'lucide-react';
 import { Post } from '@/lib/types';
 import { deletePost as deleteDbPost, approvePost, rejectPost } from '@/app/actions/db-actions';
 import { v4 as uuidv4 } from 'uuid';
@@ -352,29 +352,6 @@ export function PostHistoryList({
             Database
           </div>
         </div>
-        
-        <button
-          onClick={() => {
-            // Call parent refresh function if provided
-            if (onStatusChange) {
-              onStatusChange();
-            }
-          }}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            backgroundColor: "transparent",
-            border: "none",
-            color: "#7c3aed",
-            fontSize: "14px",
-            cursor: "pointer",
-          }}
-          title="Get latest data from database"
-        >
-          <RefreshCw size={14} className={isDbLoading ? "animate-spin" : ""} />
-          {isDbLoading ? "Loading..." : "Manual Refresh"}
-        </button>
       </div>
       
       <div style={{ 
