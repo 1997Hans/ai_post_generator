@@ -62,6 +62,7 @@ export function ApprovalStatusBadge({ approved, variant = "default" }: ApprovalS
       backgroundColor: bgColor,
       color: textColor,
       padding,
+      marginLeft: "8px",
       borderRadius,
       fontSize,
       fontWeight

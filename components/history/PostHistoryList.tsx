@@ -522,85 +522,29 @@ export function PostHistoryList({
                   )}
                 </div>
                 
-                <button
-                  onClick={() => handleDelete(post.id)}
-                  disabled={isDeleting === post.id}
-                  style={{
-                    borderRadius: "50%",
-                    padding: "8px",
-                    backgroundColor: "transparent",
-                    border: "none",
-                    cursor: isDeleting === post.id ? "wait" : "pointer",
-                    color: "#a7a3bc",
-                    transition: "background-color 0.2s, color 0.2s",
-                    opacity: isDeleting === post.id ? 0.5 : 1
-                  }}
-                  onMouseOver={(e) => {
-                    if (isDeleting !== post.id) {
-                      e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
-                      e.currentTarget.style.color = "#fff";
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.color = "#a7a3bc";
-                  }}
-                  aria-label="Delete"
-                >
-                  <Trash2 size={16} />
-                </button>
-                
-                <Link 
-                  href={`/edit/${post.id}`} 
-                  style={{
-                    borderRadius: "50%",
-                    padding: "8px",
-                    backgroundColor: "transparent",
-                    color: "#a7a3bc",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    textDecoration: "none",
-                    transition: "background-color 0.2s, color 0.2s"
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
-                    e.currentTarget.style.color = "#fff";
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.color = "#a7a3bc";
-                  }}
-                  aria-label="Edit"
-                >
-                  <Edit size={16} />
-                </Link>
-                
-                <Link 
-                  href={`/post/${post.id}`} 
-                  style={{
-                    borderRadius: "50%",
-                    padding: "8px",
-                    backgroundColor: "transparent",
-                    color: "#a7a3bc",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    textDecoration: "none",
-                    transition: "background-color 0.2s, color 0.2s"
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
-                    e.currentTarget.style.color = "#fff";
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.color = "#a7a3bc";
-                  }}
-                  aria-label="View"
-                >
-                  <Eye size={16} />
-                </Link>
+                <div className="flex justify-end gap-6">
+                  <Link 
+                    href={`/post/${post.id}`}
+                    className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+                    title="View Post"
+                  >
+                    <Eye size={18} />
+                  </Link>
+                  
+                  <button
+                    onClick={() => handleDelete(post.id)}
+                    className="p-1 text-gray-500 hover:text-red-500 transition-colors"
+                    style={{ marginLeft: "8px" }}
+                    title="Delete Post"
+                    disabled={isDeleting === post.id}
+                  >
+                    {isDeleting === post.id ? (
+                      <div className="h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Trash2 size={18} />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

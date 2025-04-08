@@ -276,19 +276,6 @@ export default function PostPage({ params }: { params: { id: string } }) {
             <ArrowLeft size={14} style={{ marginRight: '4px' }} />
             Back to Dashboard
           </Link>
-          <Link 
-            href={`/edit/${post.id}`} 
-            style={{ 
-              fontSize: '14px',
-              color: '#a090e9',
-              display: 'flex',
-              alignItems: 'center',
-              textDecoration: 'none'
-            }}
-          >
-            <Edit size={14} style={{ marginRight: '4px' }} />
-            Edit Post
-          </Link>
         </div>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -315,11 +302,17 @@ export default function PostPage({ params }: { params: { id: string } }) {
           <h2 style={{ fontSize: '18px', marginBottom: '12px' }}>Content</h2>
           <p style={{ marginBottom: '16px', lineHeight: '1.5' }}>{post.content}</p>
           
-          <div className="flex justify-end mb-4">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
             {/* Only show tone and status if post is not approved */}
             {!post.approved && (
-              <div className="flex flex-col items-end gap-2">
-                <div className="text-sm text-gray-400">{post.tone || 'casual'}</div>
+              <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                <div style={{ 
+                  fontSize: '14px', 
+                  color: '#9ca3af', 
+                  marginRight: '24px' 
+                }}>
+                  {post.tone || 'casual'}
+                </div>
                 <ApprovalStatusBadge approved={post.approved} variant="detail" />
               </div>
             )}
@@ -442,232 +435,6 @@ export default function PostPage({ params }: { params: { id: string } }) {
               <span style={{ color: '#ef4444', fontWeight: '500' }}>This post has been rejected</span>
             </div>
           )}
-        </div>
-        
-        <div style={{ marginBottom: '32px' }}>
-          <h2 style={{ fontSize: '18px', marginBottom: '16px' }}>Export Options</h2>
-          
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(4, 1fr)', 
-            gap: '8px',
-            marginBottom: '16px'
-          }}>
-            <button style={{ 
-              padding: '16px 0',
-              border: '1px solid #2c2846',
-              borderRadius: '5px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: '#14122a',
-              color: 'white',
-              cursor: 'pointer',
-              height: '80px'
-            }}>
-              <Copy size={18} style={{ marginBottom: '6px' }} />
-              <span style={{ fontSize: '12px' }}>Copy to Clipboard</span>
-            </button>
-            
-            <button style={{ 
-              padding: '16px 0',
-              border: '1px solid #2c2846',
-              borderRadius: '5px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: '#14122a',
-              color: 'white',
-              cursor: 'pointer',
-              height: '80px'
-            }}>
-              <Download size={18} style={{ marginBottom: '6px' }} />
-              <span style={{ fontSize: '12px' }}>Download</span>
-            </button>
-            
-            <button style={{ 
-              padding: '16px 0',
-              border: '1px solid #2c2846',
-              borderRadius: '5px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: '#14122a',
-              color: 'white',
-              cursor: 'pointer',
-              height: '80px'
-            }}>
-              <Share size={18} style={{ marginBottom: '6px' }} />
-              <span style={{ fontSize: '12px' }}>Share Link</span>
-            </button>
-            
-            <button style={{ 
-              padding: '16px 0',
-              border: '1px solid #2c2846',
-              borderRadius: '5px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: '#14122a',
-              color: 'white',
-              cursor: 'pointer',
-              height: '80px'
-            }}>
-              <Calendar size={18} style={{ marginBottom: '6px' }} />
-              <span style={{ fontSize: '12px' }}>Schedule Post</span>
-            </button>
-          </div>
-          
-          <div style={{ 
-            border: '1px solid #2c2846',
-            borderRadius: '12px',
-            padding: '24px',
-            background: 'linear-gradient(to bottom, #14122a, #0F0D22)',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
-          }}>
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ 
-                display: 'block', 
-                fontSize: '16px', 
-                marginBottom: '12px',
-                color: 'white',
-                fontWeight: '500'
-              }}>
-                Platform
-              </label>
-              <div style={{
-                position: 'relative'
-              }}>
-                <select style={{ 
-                  width: '100%', 
-                  padding: '12px 16px', 
-                  backgroundColor: 'rgba(10, 8, 26, 0.8)',
-                  border: '1px solid #2c2846',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  color: 'white',
-                  height: '50px',
-                  appearance: 'none',
-                  outline: 'none',
-                  cursor: 'pointer',
-                  transition: 'border-color 0.2s ease'
-                }}>
-                  <option value="" style={{ backgroundColor: '#0a081a' }}>Select a platform</option>
-                  <option value="twitter" style={{ backgroundColor: '#0a081a' }}>Twitter</option>
-                  <option value="instagram" style={{ backgroundColor: '#0a081a' }}>Instagram</option>
-                  <option value="facebook" style={{ backgroundColor: '#0a081a' }}>Facebook</option>
-                  <option value="linkedin" style={{ backgroundColor: '#0a081a' }}>LinkedIn</option>
-                </select>
-                <div style={{
-                  position: 'absolute',
-                  right: '16px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  pointerEvents: 'none'
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M4 6L8 10L12 6" stroke="#a090e9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
-            
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: '1fr 1fr', 
-              gap: '16px',
-              marginBottom: '24px'
-            }}>
-              <div>
-                <label style={{ 
-                  display: 'block', 
-                  fontSize: '16px', 
-                  marginBottom: '12px',
-                  color: 'white',
-                  fontWeight: '500'
-                }}>
-                  Date
-                </label>
-                <div style={{
-                  position: 'relative',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>
-                  <input 
-                    type="text" 
-                    style={{ 
-                      width: '100%', 
-                      padding: '12px 16px', 
-                      backgroundColor: '#0d0c1d',
-                      border: '1px solid #2c2846',
-                      borderRadius: '8px',
-                      fontSize: '16px',
-                      color: 'white',
-                      height: '50px',
-                      outline: 'none'
-                    }}
-                    placeholder="mm/dd/yyyy"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label style={{ 
-                  display: 'block', 
-                  fontSize: '16px', 
-                  marginBottom: '12px',
-                  color: 'white',
-                  fontWeight: '500'
-                }}>
-                  Time
-                </label>
-                <div style={{
-                  position: 'relative',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>
-                  <input 
-                    type="text" 
-                    style={{ 
-                      width: '100%', 
-                      padding: '12px 16px', 
-                      backgroundColor: '#0d0c1d',
-                      border: '1px solid #2c2846',
-                      borderRadius: '8px',
-                      fontSize: '16px',
-                      color: 'white',
-                      height: '50px',
-                      outline: 'none'
-                    }}
-                    placeholder="--:-- --"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <button style={{ 
-              width: '100%',
-              padding: '14px',
-              backgroundColor: '#5552fe',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              height: '50px',
-              boxShadow: '0 2px 10px rgba(85, 82, 254, 0.3)',
-              transition: 'background-color 0.2s ease, transform 0.1s ease',
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
-              Schedule Post
-            </button>
-          </div>
         </div>
         
         <div style={{ marginBottom: '32px' }}>
