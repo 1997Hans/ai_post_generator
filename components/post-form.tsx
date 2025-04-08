@@ -1,9 +1,37 @@
 "use client"
 
-import { useState } from "react"
-import { SparklesIcon, CheckCircle } from "lucide-react"
+import { useState, useEffect } from "react"
+import { SparklesIcon, CheckCircle, X, Loader2 } from "lucide-react"
 import { savePost } from "@/app/actions/db-actions"
 import { useToast } from "@/lib/hooks/useToast"
+
+// Loading messages for the generation process
+const loadingMessages = [
+  "Crafting the perfect words for your audience...",
+  "Analyzing trends to make your post shine...",
+  "Optimizing hashtags for maximum reach...",
+  "Adding a sprinkle of creativity...",
+  "Finding the perfect tone for your brand...",
+  "Polishing your post to perfection...",
+  "Brewing social media magic...",
+  "Tailoring content for your platform...",
+  "Curating engagement-worthy content...",
+  "Making your social media manager proud..."
+]
+
+// Interesting social media facts to display
+const socialMediaFacts = [
+  "Posts with images get 2.3x more engagement than those without.",
+  "The best time to post on Instagram is typically between 10am-3pm.",
+  "Using relevant hashtags can increase engagement by up to 12.6%.",
+  "The ideal LinkedIn post is around 100 words.",
+  "Videos on Twitter get 10x more engagement than static images.",
+  "Questions in Facebook posts get 2x more comments than statements.",
+  "TikTok videos under 15 seconds have the highest completion rates.",
+  "73% of marketers believe social media is somewhat or very effective.",
+  "User-generated content has 4.5% higher conversion rates.",
+  "Engagement rates typically drop after the 3rd hashtag on LinkedIn."
+]
 
 export function PostForm() {
   const [activeTab, setActiveTab] = useState("create")
@@ -19,8 +47,62 @@ export function PostForm() {
   // Use toast for notifications
   const { showSuccess, showError } = useToast()
 
-  // Use the direct fetch approach first to debug
+  // Direct fetch approach first to debug
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Loading animation states
+  const [generationProgress, setGenerationProgress] = useState(0)
+  const [currentMessage, setCurrentMessage] = useState(loadingMessages[0])
+  const [currentFact, setCurrentFact] = useState(socialMediaFacts[0])
+  
+  // Progress simulation
+  useEffect(() => {
+    if (isLoading) {
+      setGenerationProgress(0)
+      const interval = setInterval(() => {
+        setGenerationProgress(prev => {
+          // Slow down progress as it gets closer to 100%
+          const increment = Math.max(1, 10 * (1 - prev / 100))
+          const nextProgress = prev + increment
+          return nextProgress > 95 ? 95 : nextProgress
+        })
+      }, 300)
+      return () => clearInterval(interval)
+    } else if (generationProgress > 0 && generationProgress < 100) {
+      // Complete the progress bar when generation is done
+      setGenerationProgress(100)
+    }
+  }, [isLoading, generationProgress])
+
+  // Rotate through loading messages
+  useEffect(() => {
+    if (!isLoading) return
+
+    const messageInterval = setInterval(() => {
+      setCurrentMessage(prev => {
+        const currentIndex = loadingMessages.indexOf(prev)
+        const nextIndex = (currentIndex + 1) % loadingMessages.length
+        return loadingMessages[nextIndex]
+      })
+    }, 3000)
+    
+    return () => clearInterval(messageInterval)
+  }, [isLoading])
+  
+  // Rotate through social media facts
+  useEffect(() => {
+    if (!isLoading) return
+
+    const factInterval = setInterval(() => {
+      setCurrentFact(prev => {
+        const currentIndex = socialMediaFacts.indexOf(prev)
+        const nextIndex = (currentIndex + 1) % socialMediaFacts.length
+        return socialMediaFacts[nextIndex]
+      })
+    }, 5000)
+    
+    return () => clearInterval(factInterval)
+  }, [isLoading])
 
   // Handle copy to clipboard
   const copyToClipboard = (text: string) => {
@@ -104,6 +186,14 @@ export function PostForm() {
         });
     }
   };
+
+  // Handle cancellation of post generation
+  const handleCancelGeneration = () => {
+    // Abort fetch or any pending operations
+    setIsLoading(false)
+    setGenerationProgress(0)
+    showSuccess("Generation cancelled")
+  }
 
   // Direct fetch function to manually control the API call
   const generatePost = async () => {
@@ -809,6 +899,195 @@ export function PostForm() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Loading Overlay - Fixed position over everything */}
+      {isLoading && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          backdropFilter: "blur(8px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999,
+          padding: "1rem"
+        }}>
+          <div style={{
+            backgroundColor: "rgba(20, 15, 35, 0.8)",
+            borderRadius: "1rem",
+            border: "1px solid rgba(91, 77, 168, 0.2)",
+            padding: "2rem",
+            maxWidth: "32rem",
+            width: "100%",
+            position: "relative",
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)"
+          }}>
+            {/* Close button */}
+            <button 
+              onClick={handleCancelGeneration}
+              style={{
+                position: "absolute",
+                top: "1rem",
+                right: "1rem",
+                background: "transparent",
+                border: "none",
+                color: "#a7a3bc",
+                cursor: "pointer",
+                padding: "0.5rem",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 1
+              }}
+              aria-label="Cancel generation"
+            >
+              <X size={18} />
+            </button>
+            
+            {/* Content */}
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "2rem"
+            }}>
+              {/* Spinner */}
+              <div style={{ position: "relative" }}>
+                <div style={{
+                  position: "absolute",
+                  inset: "-0.5rem",
+                  borderRadius: "50%",
+                  opacity: 0.5,
+                  animation: "pulse 2s infinite ease-in-out",
+                  background: "linear-gradient(90deg, #ea4c89 0%, #8f4bde 50%, #4668ea 100%)",
+                  filter: "blur(1rem)"
+                }} />
+                <div style={{
+                  position: "relative",
+                  zIndex: 1,
+                  padding: "2rem",
+                  backgroundColor: "rgba(20, 15, 35, 0.5)",
+                  borderRadius: "50%",
+                  border: "1px solid rgba(91, 77, 168, 0.2)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                  <Loader2 size={40} style={{
+                    animation: "spin 2s linear infinite",
+                    background: "linear-gradient(90deg, #ea4c89 0%, #8f4bde 50%, #4668ea 100%)",
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                    color: "transparent"
+                  }} />
+                </div>
+              </div>
+              
+              {/* Text content */}
+              <div style={{ textAlign: "center", maxWidth: "28rem" }}>
+                <h3 style={{
+                  fontSize: "1.5rem",
+                  fontWeight: "600",
+                  marginBottom: "1rem",
+                  background: "linear-gradient(90deg, #ea4c89 0%, #8f4bde 50%, #4668ea 100%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent"
+                }}>
+                  Generating your {platform} post...
+                </h3>
+                
+                <p style={{ color: "#a7a3bc", marginBottom: "1.5rem" }}>
+                  {currentMessage}
+                </p>
+                
+                {/* Progress bar */}
+                <div style={{
+                  width: "100%",
+                  height: "0.5rem",
+                  backgroundColor: "rgba(29, 23, 52, 0.5)",
+                  borderRadius: "9999px",
+                  overflow: "hidden",
+                  marginBottom: "2rem"
+                }}>
+                  <div style={{
+                    height: "100%",
+                    width: `${generationProgress}%`,
+                    background: "linear-gradient(90deg, #ea4c89 0%, #8f4bde 50%, #4668ea 100%)",
+                    borderRadius: "9999px",
+                    transition: "width 0.3s ease"
+                  }} />
+                </div>
+                
+                {/* Facts box */}
+                <div style={{
+                  backgroundColor: "rgba(20, 15, 35, 0.6)",
+                  border: "1px solid rgba(91, 77, 168, 0.1)",
+                  borderRadius: "0.75rem",
+                  padding: "1rem",
+                  marginBottom: "1.5rem"
+                }}>
+                  <h4 style={{
+                    fontSize: "0.875rem",
+                    fontWeight: "600",
+                    marginBottom: "0.5rem",
+                    color: "#d8d4ea"
+                  }}>
+                    Did you know?
+                  </h4>
+                  <p style={{
+                    fontSize: "0.875rem",
+                    color: "#a7a3bc",
+                    fontStyle: "italic"
+                  }}>
+                    {currentFact}
+                  </p>
+                </div>
+                
+                {/* Cancel button */}
+                <button
+                  onClick={handleCancelGeneration}
+                  style={{
+                    padding: "0.75rem 1.5rem",
+                    borderRadius: "0.5rem",
+                    backgroundColor: "rgba(29, 23, 52, 0.5)",
+                    border: "1px solid rgba(91, 77, 168, 0.2)",
+                    color: "#d8d4ea",
+                    fontSize: "0.875rem",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  Cancel Generation
+                </button>
+              </div>
+            </div>
+            
+            {/* Bottom animation bar */}
+            <div style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: "2px",
+              overflow: "hidden"
+            }}>
+              <div style={{
+                height: "100%",
+                width: "30%",
+                background: "linear-gradient(90deg, #ea4c89 0%, #8f4bde 50%, #4668ea 100%)",
+                animation: "loading-bar 2s infinite linear",
+                transformOrigin: "left"
+              }} />
+            </div>
+          </div>
         </div>
       )}
     </div>

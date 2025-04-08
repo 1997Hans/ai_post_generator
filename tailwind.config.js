@@ -100,6 +100,10 @@ module.exports = {
           "0%, 100%": { opacity: 0.3 },
           "50%": { opacity: 1 },
         },
+        "loading-bar": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(400%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -107,6 +111,7 @@ module.exports = {
         "float": "float 6s infinite ease-in-out",
         "pulse-glow": "pulse-glow 4s infinite ease-in-out",
         "twinkle": "twinkle 4s infinite ease-in-out",
+        "loading-bar": "loading-bar 2s infinite linear",
       },
     },
   },
