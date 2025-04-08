@@ -5,35 +5,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getPost, approvePost, rejectPost } from '@/app/actions/db-actions';
 import { Post } from '@/lib/types';
-import { ArrowLeft, Edit, Copy, Download, Share, Calendar } from 'lucide-react';
+import { ArrowLeft, Edit, Copy, Download, Share, Calendar, Star, CheckCircle, XCircle } from 'lucide-react';
+import { ApprovalStatusBadge } from '@/components/approval/ApprovalStatusBadge';
+import { StatusDisplay } from '@/components/StatusDisplay';
 import { toast } from 'sonner';
-
-// Simple local badge component to replace the external one
-const ApprovalStatusBadge = ({ approved, variant }: { approved: boolean | null; variant?: string }) => {
-  const isLarge = variant === 'large';
-  
-  return (
-    <div style={{
-      backgroundColor: approved === true ? 'rgba(16, 185, 129, 0.2)' : 
-                        approved === false ? 'rgba(239, 68, 68, 0.2)' : 
-                        'rgba(107, 114, 128, 0.2)',
-      color: approved === true ? '#10b981' : 
-             approved === false ? '#ef4444' : 
-             '#6b7280',
-      padding: isLarge ? '8px 16px' : '4px 12px',
-      borderRadius: '20px',
-      fontSize: isLarge ? '14px' : '12px',
-      fontWeight: '500',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}>
-      {approved === true ? 'Approved' : 
-       approved === false ? 'Rejected' : 
-       'Pending'}
-    </div>
-  );
-};
 
 export default function PostPage({ params }: { params: { id: string } }) {
   // Unwrap params using React.use()
@@ -191,6 +166,13 @@ export default function PostPage({ params }: { params: { id: string } }) {
     );
   }
 
+  const containerStyle = {
+    maxWidth: '1024px',
+    margin: '0 auto',
+    padding: '0 20px',
+    color: 'white',
+  };
+  
   // Simple reject modal
   const RejectModal = () => {
     if (!showRejectModal) return null;
@@ -273,13 +255,6 @@ export default function PostPage({ params }: { params: { id: string } }) {
     );
   };
   
-  const containerStyle = {
-    maxWidth: '1024px',
-    margin: '0 auto',
-    padding: '0 20px',
-    color: 'white',
-  };
-  
   return (
     <div style={{ 
       minHeight: '100vh',
@@ -340,6 +315,16 @@ export default function PostPage({ params }: { params: { id: string } }) {
           <h2 style={{ fontSize: '18px', marginBottom: '12px' }}>Content</h2>
           <p style={{ marginBottom: '16px', lineHeight: '1.5' }}>{post.content}</p>
           
+          <div className="flex justify-end mb-4">
+            {/* Only show tone and status if post is not approved */}
+            {!post.approved && (
+              <div className="flex flex-col items-end gap-2">
+                <div className="text-sm text-gray-400">{post.tone || 'casual'}</div>
+                <ApprovalStatusBadge approved={post.approved} variant="detail" />
+              </div>
+            )}
+          </div>
+          
           {post.hashtags.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
               {post.hashtags.map((tag, index) => (
@@ -359,7 +344,7 @@ export default function PostPage({ params }: { params: { id: string } }) {
             </div>
           )}
           
-          {/* Conditional Approval/Reject buttons - only show if not approved */}
+          {/* Status-based action buttons */}
           {post.approved === null && (
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
               <button
@@ -403,6 +388,58 @@ export default function PostPage({ params }: { params: { id: string } }) {
               >
                 {isSubmitting ? 'Processing...' : 'Reject'}
               </button>
+            </div>
+          )}
+          
+          {post.approved === true && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px', 
+              marginTop: '24px',
+              padding: '12px 16px',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              borderRadius: '8px',
+              border: '1px solid rgba(16, 185, 129, 0.2)'
+            }}>
+              <div style={{ 
+                width: '24px', 
+                height: '24px', 
+                borderRadius: '50%', 
+                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              </div>
+              <span style={{ color: '#10b981', fontWeight: '500' }}>This post has been approved</span>
+            </div>
+          )}
+          
+          {post.approved === false && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px', 
+              marginTop: '24px',
+              padding: '12px 16px',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              borderRadius: '8px',
+              border: '1px solid rgba(239, 68, 68, 0.2)'
+            }}>
+              <div style={{ 
+                width: '24px', 
+                height: '24px', 
+                borderRadius: '50%', 
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <XCircle className="w-4 h-4 text-red-500" />
+              </div>
+              <span style={{ color: '#ef4444', fontWeight: '500' }}>This post has been rejected</span>
             </div>
           )}
         </div>
@@ -751,4 +788,4 @@ export default function PostPage({ params }: { params: { id: string } }) {
       <RejectModal />
     </div>
   );
-}
+} 

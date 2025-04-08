@@ -1,5 +1,4 @@
 import { PostForm } from "@/components/post-form";
-import { redirect } from "next/navigation";
 
 export default function Home() {
   return (

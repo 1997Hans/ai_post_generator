@@ -1,7 +1,7 @@
 import { getPost } from "@/app/actions/db-actions";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
@@ -11,8 +11,16 @@ import { PostActions } from "@/components/post-actions";
 import { ApprovalStatusBadge } from "@/components/approval/ApprovalStatusBadge";
 import { FeedbackDialog } from "@/components/approval/FeedbackDialog";
 
-// Using simple type approach for dynamic routes
-export default async function PostDetailPage({ params }: any) {
+// Define correct types for Next.js 15 static export
+type PageParams = {
+  id: string;
+};
+
+type PageProps = {
+  params: PageParams;
+};
+
+export default async function PostDetailPage({ params }: PageProps) {
   const { post, success } = await getPost(params.id);
   
   if (!success || !post) {
