@@ -10,6 +10,7 @@ import { PostProvider } from '@/lib/context/PostContext'
 import { Toaster as SonnerToaster } from "sonner";
 import Link from 'next/link'
 import { BarChart, Pencil } from "lucide-react";
+import { Footer } from "@/components/footer";
 
 const spaceGrotesk = Space_Grotesk({ 
   subsets: ["latin"],
@@ -31,7 +32,7 @@ export default function RootLayout({
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
-      <body suppressHydrationWarning className={`${spaceGrotesk.className} min-h-screen bg-background font-sans antialiased`}>
+      <body suppressHydrationWarning className={`${spaceGrotesk.className} min-h-screen bg-background font-sans antialiased m-0`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -66,7 +67,6 @@ export default function RootLayout({
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          padding: "8px",
                           borderRadius: "12px",
                           overflow: "hidden",
                           boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
@@ -112,6 +112,7 @@ export default function RootLayout({
               </div>
               {children}
             </main>
+            <Footer />
             <Toaster />
             <SonnerToaster theme="dark" position="top-right" />
           </PostProvider>
@@ -120,6 +121,12 @@ export default function RootLayout({
         
         {/* Global styles for StatusDisplay component */}
         <style jsx global>{`
+          /* Reset body margin */
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
           /* Status display component styles */
           .status-container {
             display: flex;
