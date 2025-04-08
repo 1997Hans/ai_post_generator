@@ -58,7 +58,7 @@ export default function DashboardPage() {
 
   return (
     <div style={{ 
-      padding: "48px 24px", 
+      padding: "24px 16px", 
       maxWidth: "1200px", 
       margin: "0 auto", 
       width: "100%",
@@ -69,42 +69,77 @@ export default function DashboardPage() {
       <div style={{
         display: "flex",
         justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: "32px"
+        alignItems: "flex-start",
+        marginBottom: "32px",
+        flexDirection: "column",
       }}>
         <div>
           <h1 style={{
-            fontSize: "48px",
+            fontSize: "clamp(32px, 8vw, 48px)",
             fontWeight: "bold",
             marginBottom: "8px"
           }}>Dashboard</h1>
           <p style={{
             color: "#a7a3bc",
-            fontSize: "16px"
+            fontSize: "16px",
+            marginBottom: "24px"
           }}>Manage and track all your generated posts</p>
         </div>
         
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <Link
-            href="/"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              backgroundColor: "#7c3aed",
-              color: "white",
-              padding: "10px 18px",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              transition: "background-color 0.2s",
-              textDecoration: "none"
-            }}
-          >
-            <PlusCircle size={16} style={{ marginRight: "8px" }} />
-            Create New Post
-          </Link>
-        </div>
+        <Link
+          href="/"
+          className="create-post-button"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#7c3aed",
+            color: "white",
+            padding: "10px 18px",
+            borderRadius: "8px",
+            fontSize: "14px",
+            fontWeight: "500",
+            transition: "background-color 0.2s",
+            textDecoration: "none",
+            whiteSpace: "nowrap"
+          }}
+        >
+          <PlusCircle size={16} style={{ marginRight: "8px" }} />
+          Create New Post
+        </Link>
       </div>
+      
+      {/* Responsive dashboard header for larger screens */}
+      <style jsx>{`
+        .create-post-button {
+          width: auto;
+        }
+        
+        @media (max-width: 480px) {
+          .create-post-button {
+            padding: 12px 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+          }
+        }
+      
+        @media (min-width: 768px) {
+          div > div:first-child {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+          }
+          
+          div > div:first-child > div > p {
+            margin-bottom: 0;
+          }
+          
+          div > div:first-child > a {
+            margin-top: 0;
+          }
+        }
+      `}</style>
       
       {/* Refresh alert when database changes might have occurred */}
       {showRefreshAlert && (
@@ -141,7 +176,7 @@ export default function DashboardPage() {
       )}
       
       {/* Enhanced Social Media Manager Instructions */}
-      <div style={{
+      <div className="instruction-box" style={{
         backgroundColor: "rgba(124, 58, 237, 0.1)",
         border: "1px solid rgba(124, 58, 237, 0.2)",
         borderRadius: "8px",
@@ -153,7 +188,7 @@ export default function DashboardPage() {
           alignItems: "flex-start",
           gap: "12px"
         }}>
-          <Lightbulb style={{ color: "#7c3aed", marginTop: "2px" }} size={20} />
+          <Lightbulb style={{ color: "#7c3aed", marginTop: "2px", flexShrink: 0 }} size={20} />
           <div style={{ flex: 1 }}>
             <h3 style={{ fontSize: "16px", fontWeight: "500", marginBottom: "8px" }}>
               Social Media Manager Approval Guide
@@ -176,6 +211,7 @@ export default function DashboardPage() {
               padding: "8px",
               cursor: "pointer",
               transition: "background-color 0.2s, color 0.2s",
+              flexShrink: 0
             }}
             aria-label={showHelpDetails ? "Hide detailed guide" : "Show detailed guide"}
             title={showHelpDetails ? "Hide detailed guide" : "Show detailed guide"}
@@ -189,7 +225,7 @@ export default function DashboardPage() {
         </div>
         
         {showHelpDetails && (
-          <div style={{ 
+          <div className="help-details" style={{ 
             display: "grid", 
             gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", 
             gap: "16px",
@@ -201,7 +237,7 @@ export default function DashboardPage() {
           }}>
             <div>
               <h4 style={{ fontSize: "14px", fontWeight: "500", color: "white", marginBottom: "8px", display: "flex", alignItems: "center" }}>
-                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", backgroundColor: "#7c3aed", color: "white", width: "20px", height: "20px", borderRadius: "50%", marginRight: "8px", fontSize: "12px" }}>1</span>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", backgroundColor: "#7c3aed", color: "white", width: "20px", height: "20px", borderRadius: "50%", marginRight: "8px", fontSize: "12px", flexShrink: 0 }}>1</span>
                 From the Dashboard
               </h4>
               <ul style={{ listStyleType: "disc", paddingLeft: "28px" }}>
@@ -216,7 +252,7 @@ export default function DashboardPage() {
             
             <div>
               <h4 style={{ fontSize: "14px", fontWeight: "500", color: "white", marginBottom: "8px", display: "flex", alignItems: "center" }}>
-                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", backgroundColor: "#7c3aed", color: "white", width: "20px", height: "20px", borderRadius: "50%", marginRight: "8px", fontSize: "12px" }}>2</span>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", backgroundColor: "#7c3aed", color: "white", width: "20px", height: "20px", borderRadius: "50%", marginRight: "8px", fontSize: "12px", flexShrink: 0 }}>2</span>
                 From Post Details
               </h4>
               <ul style={{ listStyleType: "disc", paddingLeft: "28px" }}>
@@ -234,7 +270,7 @@ export default function DashboardPage() {
             
             <div>
               <h4 style={{ fontSize: "14px", fontWeight: "500", color: "white", marginBottom: "8px", display: "flex", alignItems: "center" }}>
-                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", backgroundColor: "#7c3aed", color: "white", width: "20px", height: "20px", borderRadius: "50%", marginRight: "8px", fontSize: "12px" }}>3</span>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", backgroundColor: "#7c3aed", color: "white", width: "20px", height: "20px", borderRadius: "50%", marginRight: "8px", fontSize: "12px", flexShrink: 0 }}>3</span>
                 Status Indicators
               </h4>
               <ul style={{ listStyleType: "disc", paddingLeft: "28px" }}>
@@ -252,6 +288,19 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+      
+      <style jsx>{`
+        @media (max-width: 480px) {
+          .instruction-box {
+            padding: 12px;
+          }
+          
+          .help-details {
+            padding: 12px;
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
       
       <div style={{ flex: 1, position: "relative" }}>
         <PostHistoryList 
