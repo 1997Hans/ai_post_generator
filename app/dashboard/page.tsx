@@ -3,16 +3,16 @@
 import React from 'react';
 import { PostHistoryList } from '@/components/history/PostHistoryList';
 import Link from 'next/link';
-import { PlusCircle, Lightbulb, AlertCircle, CheckCircle } from 'lucide-react';
+import { PlusCircle, Lightbulb, AlertCircle, CheckCircle, EyeIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getAllPosts } from '@/app/actions/db-actions';
 import { Post } from '@/lib/types';
-import { ApprovalHelpTooltip } from '@/components/post/PostDetailHeader';
 
 export default function DashboardPage() {
   const [dbPosts, setDbPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showRefreshAlert, setShowRefreshAlert] = useState(false);
+  const [showHelpDetails, setShowHelpDetails] = useState(false);
   
   // Function to notify user about potential database changes
   const showRefreshReminder = () => {
@@ -85,8 +85,6 @@ export default function DashboardPage() {
         </div>
         
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <ApprovalHelpTooltip />
-          
           <Link
             href="/"
             style={{
@@ -142,27 +140,117 @@ export default function DashboardPage() {
         </div>
       )}
       
-      {/* Social Media Manager Instructions */}
+      {/* Enhanced Social Media Manager Instructions */}
       <div style={{
         backgroundColor: "rgba(124, 58, 237, 0.1)",
         border: "1px solid rgba(124, 58, 237, 0.2)",
         borderRadius: "8px",
         padding: "16px",
         marginBottom: "24px",
-        display: "flex",
-        alignItems: "flex-start",
-        gap: "12px"
       }}>
-        <Lightbulb style={{ color: "#7c3aed", marginTop: "2px" }} size={20} />
-        <div>
-          <h3 style={{ fontSize: "16px", fontWeight: "500", marginBottom: "8px" }}>
-            Social Media Manager Approval Guide
-          </h3>
-          <p style={{ fontSize: "14px", color: "#a7a3bc", lineHeight: "1.6" }}>
-            You can now approve or reject posts directly from this dashboard! Each post card has <span style={{ color: "#4ade80" }}>Approve</span> and <span style={{ color: "#ef4444" }}>Reject</span> buttons to quickly review content. 
-            Click the eye icon on any post to view details and provide feedback when rejecting content.
-          </p>
+        <div style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: "12px"
+        }}>
+          <Lightbulb style={{ color: "#7c3aed", marginTop: "2px" }} size={20} />
+          <div style={{ flex: 1 }}>
+            <h3 style={{ fontSize: "16px", fontWeight: "500", marginBottom: "8px" }}>
+              Social Media Manager Approval Guide
+            </h3>
+            <p style={{ fontSize: "14px", color: "#a7a3bc", lineHeight: "1.6" }}>
+              You can now approve or reject posts directly from this dashboard! Each post card has <span style={{ color: "#4ade80" }}>Approve</span> and <span style={{ color: "#ef4444" }}>Reject</span> buttons to quickly review content. 
+              Click the eye icon on any post to view details and provide feedback when rejecting content.
+            </p>
+          </div>
+          <button 
+            onClick={() => setShowHelpDetails(!showHelpDetails)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "rgba(124, 58, 237, 0.2)",
+              color: "#a7a3bc",
+              border: "none",
+              borderRadius: "6px",
+              padding: "8px",
+              cursor: "pointer",
+              transition: "background-color 0.2s, color 0.2s",
+            }}
+            aria-label={showHelpDetails ? "Hide detailed guide" : "Show detailed guide"}
+            title={showHelpDetails ? "Hide detailed guide" : "Show detailed guide"}
+          >
+            {showHelpDetails ? (
+              <ChevronUp size={16} />
+            ) : (
+              <ChevronDown size={16} />
+            )}
+          </button>
         </div>
+        
+        {showHelpDetails && (
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", 
+            gap: "16px",
+            marginTop: "16px",
+            padding: "16px",
+            backgroundColor: "rgba(124, 58, 237, 0.05)",
+            borderRadius: "6px",
+            animation: "fadeIn 0.3s ease-in-out",
+          }}>
+            <div>
+              <h4 style={{ fontSize: "14px", fontWeight: "500", color: "white", marginBottom: "8px", display: "flex", alignItems: "center" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", backgroundColor: "#7c3aed", color: "white", width: "20px", height: "20px", borderRadius: "50%", marginRight: "8px", fontSize: "12px" }}>1</span>
+                From the Dashboard
+              </h4>
+              <ul style={{ listStyleType: "disc", paddingLeft: "28px" }}>
+                <li style={{ fontSize: "14px", color: "#a7a3bc", marginBottom: "4px" }}>
+                  Each post card has <span style={{ color: "#4ade80" }}>Approve</span> and <span style={{ color: "#ef4444" }}>Reject</span> buttons
+                </li>
+                <li style={{ fontSize: "14px", color: "#a7a3bc" }}>
+                  Take action without opening the post details
+                </li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 style={{ fontSize: "14px", fontWeight: "500", color: "white", marginBottom: "8px", display: "flex", alignItems: "center" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", backgroundColor: "#7c3aed", color: "white", width: "20px", height: "20px", borderRadius: "50%", marginRight: "8px", fontSize: "12px" }}>2</span>
+                From Post Details
+              </h4>
+              <ul style={{ listStyleType: "disc", paddingLeft: "28px" }}>
+                <li style={{ fontSize: "14px", color: "#a7a3bc", marginBottom: "4px" }}>
+                  Click the <EyeIcon style={{ display: "inline", width: "14px", height: "14px", verticalAlign: "middle", marginRight: "2px" }} /> icon to view post details
+                </li>
+                <li style={{ fontSize: "14px", color: "#a7a3bc", marginBottom: "4px" }}>
+                  Use the larger approval buttons in the detailed view
+                </li>
+                <li style={{ fontSize: "14px", color: "#a7a3bc" }}>
+                  Leave feedback when rejecting a post
+                </li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 style={{ fontSize: "14px", fontWeight: "500", color: "white", marginBottom: "8px", display: "flex", alignItems: "center" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", backgroundColor: "#7c3aed", color: "white", width: "20px", height: "20px", borderRadius: "50%", marginRight: "8px", fontSize: "12px" }}>3</span>
+                Status Indicators
+              </h4>
+              <ul style={{ listStyleType: "disc", paddingLeft: "28px" }}>
+                <li style={{ fontSize: "14px", color: "#a7a3bc", marginBottom: "4px" }}>
+                  <span style={{ color: "#f59e0b" }}>Pending</span> - Awaiting review
+                </li>
+                <li style={{ fontSize: "14px", color: "#a7a3bc", marginBottom: "4px" }}>
+                  <span style={{ color: "#4ade80" }}>Approved</span> - Ready for publishing
+                </li>
+                <li style={{ fontSize: "14px", color: "#a7a3bc" }}>
+                  <span style={{ color: "#ef4444" }}>Rejected</span> - Needs improvements
+                </li>
+              </ul>
+            </div>
+          </div>
+        )}
       </div>
       
       <div style={{ flex: 1, position: "relative" }}>
